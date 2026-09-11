@@ -169,7 +169,14 @@ class WorkflowKernel:
             )
             return transaction_id
 
-    def begin_generation_call(self, transaction_id: str, request_digest: str) -> str:
+    def begin_generation_call(
+        self,
+        transaction_id: str,
+        request_digest: str,
+        *,
+        model_identity: str | None = None,
+        adapter_version: str | None = None,
+    ) -> str:
         call_id = uuid.uuid4().hex
         with self.db.transaction() as connection:
             transaction = self._one(
@@ -199,8 +206,17 @@ class WorkflowKernel:
             ).fetchone()[0]
             now = utc_now()
             connection.execute(
-                "INSERT INTO generation_calls(id,transaction_id,attempt_index,request_digest,status,started_at) VALUES (?,?,?,?,?,?)",
-                (call_id, transaction_id, attempt, request_digest, CallStatus.RUNNING, now),
+                "INSERT INTO generation_calls(id,transaction_id,attempt_index,request_digest,status,started_at,model_identity,adapter_version) VALUES (?,?,?,?,?,?,?,?)",
+                (
+                    call_id,
+                    transaction_id,
+                    attempt,
+                    request_digest,
+                    CallStatus.RUNNING,
+                    now,
+                    model_identity,
+                    adapter_version,
+                ),
             )
             connection.execute(
                 "UPDATE asset_transactions SET status=?,updated_at=? WHERE id=?",
@@ -222,6 +238,11 @@ class WorkflowKernel:
         status: CallStatus,
         response_digest: str | None = None,
         failure_code: str | None = None,
+        *,
+        model_identity: str | None = None,
+        adapter_version: str | None = None,
+        duration_ms: int | None = None,
+        termination_reason: str | None = None,
     ) -> None:
         if status is CallStatus.RUNNING:
             raise KernelError("RK008_INVALID_CALL_FINISH", "call cannot finish as RUNNING")
@@ -230,8 +251,18 @@ class WorkflowKernel:
                 connection, "SELECT transaction_id FROM generation_calls WHERE id=?", (call_id,)
             )
             connection.execute(
-                "UPDATE generation_calls SET status=?,response_digest=?,failure_code=?,finished_at=? WHERE id=?",
-                (status, response_digest, failure_code, utc_now(), call_id),
+                "UPDATE generation_calls SET status=?,response_digest=?,failure_code=?,finished_at=?,model_identity=COALESCE(?,model_identity),adapter_version=COALESCE(?,adapter_version),duration_ms=?,termination_reason=? WHERE id=?",
+                (
+                    status,
+                    response_digest,
+                    failure_code,
+                    utc_now(),
+                    model_identity,
+                    adapter_version,
+                    duration_ms,
+                    termination_reason,
+                    call_id,
+                ),
             )
             if status in {CallStatus.FAILED, CallStatus.TIMED_OUT}:
                 connection.execute(

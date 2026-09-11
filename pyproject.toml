@@ -48,7 +48,10 @@ files = ["src"]
 [tool.pytest.ini_options]
 addopts = "--strict-config --strict-markers --cov=audio_story --cov-branch --cov-report=term-missing"
 testpaths = ["tests"]
-markers = ["gpu: requires local GPU hardware and is excluded from the default suite"]
+markers = [
+  "gpu: requires local GPU hardware and is excluded from the default suite",
+  "local_llm: explicit smoke test requiring a locally installed llama.cpp server",
+]
 
 [tool.coverage.run]
 source = ["audio_story"]

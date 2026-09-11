@@ -35,7 +35,16 @@ def test_new_database_wal_foreign_keys_tables_and_idempotent_migration(tmp_path:
     assert required <= names
     database.close()
     reopened = Database(tmp_path / "state.sqlite3", MIGRATIONS)
-    assert reopened.connection.execute("SELECT COUNT(*) FROM schema_migrations").fetchone()[0] == 1
+    assert reopened.connection.execute("SELECT COUNT(*) FROM schema_migrations").fetchone()[0] == 2
+    call_columns = {
+        row[1] for row in reopened.connection.execute("PRAGMA table_info(generation_calls)")
+    }
+    assert {
+        "model_identity",
+        "adapter_version",
+        "duration_ms",
+        "termination_reason",
+    } <= call_columns
     reopened.close()
 
 
@@ -48,6 +57,22 @@ def test_migration_checksum_change_is_rejected(tmp_path: Path) -> None:
     path.write_text(path.read_text(encoding="utf-8") + "\n-- changed", encoding="utf-8")
     with pytest.raises(MigrationError):
         Database(tmp_path / "state.sqlite3", copied)
+
+
+def test_m3_database_upgrades_to_migration_002(tmp_path: Path) -> None:
+    copied = tmp_path / "migrations"
+    copied.mkdir()
+    shutil.copy2(MIGRATIONS / "001_workflow_kernel.sql", copied)
+    database = Database(tmp_path / "state.sqlite3", copied)
+    assert database.connection.execute("SELECT COUNT(*) FROM schema_migrations").fetchone()[0] == 1
+    database.close()
+
+    shutil.copy2(MIGRATIONS / "002_llm_call_metadata.sql", copied)
+    upgraded = Database(tmp_path / "state.sqlite3", copied)
+    assert upgraded.connection.execute("SELECT COUNT(*) FROM schema_migrations").fetchone()[0] == 2
+    columns = {row[1] for row in upgraded.connection.execute("PRAGMA table_info(generation_calls)")}
+    assert "model_identity" in columns
+    upgraded.close()
 
 
 def test_foreign_key_and_unique_constraint_are_final_guards(tmp_path: Path) -> None:
