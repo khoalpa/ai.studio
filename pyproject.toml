@@ -1,0 +1,53 @@
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[project]
+name = "audio-story-offline"
+version = "0.0.0"
+description = "Offline hybrid runtime for the Audio Story v3.16.13 contract"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "Proprietary" }
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+  "coverage[toml]>=7.6",
+  "mypy>=1.11",
+  "pre-commit>=3.8",
+  "pytest>=8.3",
+  "pytest-cov>=5.0",
+  "ruff>=0.6",
+]
+
+[project.scripts]
+audio-story = "audio_story.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/audio_story"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+files = ["src"]
+
+[tool.pytest.ini_options]
+addopts = "--strict-config --strict-markers --cov=audio_story --cov-branch --cov-report=term-missing"
+testpaths = ["tests"]
+markers = ["gpu: requires local GPU hardware and is excluded from the default suite"]
+
+[tool.coverage.run]
+source = ["audio_story"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+fail_under = 85
