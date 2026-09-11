@@ -23,6 +23,7 @@ dev = [
 
 [project.scripts]
 audio-story = "audio_story.cli:main"
+audio-story-validate = "audio_story.validation.validate_story_runtime:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/audio_story"]
