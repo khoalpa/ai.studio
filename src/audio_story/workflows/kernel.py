@@ -57,7 +57,7 @@ class WorkflowKernel:
         self.workspace.mkdir(parents=True, exist_ok=True)
         migrations = Path(__file__).parents[3] / "migrations"
         self.db = Database(self.workspace / "runtime.sqlite3", migrations, busy_timeout_ms)
-        self.store = ArtifactStore(self.workspace)
+        self.store = ArtifactStore(self.workspace, self.db.connection)
 
     def close(self) -> None:
         self.db.close()
@@ -515,6 +515,414 @@ class WorkflowKernel:
                 (artifact_id, dependency_digest),
             )
             return cursor.rowcount
+
+    def record_cross_file_result(
+        self,
+        transaction_id: str,
+        generation_call_id: str,
+        artifact_id: str,
+        *,
+        status: str,
+        error_code: str | None,
+        dependency_digest: str,
+        evidence_digest: str,
+        package_identity: str | None = None,
+    ) -> str:
+        """Persist an idempotent cross-file result and fail closed on rejection."""
+        allowed = {"PASS", "REJECTED", "STALE", "QUARANTINED"}
+        if status not in allowed:
+            raise KernelError("RK020_CROSS_FILE_STATUS", "invalid cross-file result status")
+        key = sha256_bytes(
+            canonical_json_bytes(
+                {
+                    "transaction_id": transaction_id,
+                    "generation_call_id": generation_call_id,
+                    "artifact_id": artifact_id,
+                    "package_identity": package_identity,
+                    "status": status,
+                    "error_code": error_code,
+                    "dependency_digest": dependency_digest,
+                    "evidence_digest": evidence_digest,
+                }
+            )
+        )
+        with self.db.transaction() as connection:
+            existing = connection.execute(
+                "SELECT id FROM cross_file_gate_results WHERE idempotency_key=?", (key,)
+            ).fetchone()
+            if existing is not None:
+                return str(existing["id"])
+            workflow_id, stage_id = self._workflow_for_transaction(connection, transaction_id)
+            call = self._one(
+                connection,
+                "SELECT transaction_id,status FROM generation_calls WHERE id=?",
+                (generation_call_id,),
+            )
+            if call["transaction_id"] != transaction_id:
+                raise KernelError(
+                    "RK049_CALL_TRANSACTION_MISMATCH", "call belongs to another transaction"
+                )
+            result_id = uuid.uuid4().hex
+            connection.execute(
+                "INSERT INTO cross_file_gate_results VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                (
+                    result_id,
+                    key,
+                    workflow_id,
+                    stage_id,
+                    transaction_id,
+                    generation_call_id,
+                    artifact_id,
+                    package_identity,
+                    status,
+                    error_code,
+                    dependency_digest,
+                    evidence_digest,
+                    utc_now(),
+                ),
+            )
+            if status != "PASS":
+                connection.execute(
+                    "UPDATE gate_results SET is_current=0 WHERE artifact_id=? AND is_current=1",
+                    (artifact_id,),
+                )
+                connection.execute(
+                    "UPDATE artifacts SET status=? WHERE id=? AND mutation_status=?",
+                    (ArtifactStatus.QUARANTINED, artifact_id, MutationStatus.MUTABLE),
+                )
+                artifact = self._one(
+                    connection, "SELECT sha256 FROM artifacts WHERE id=?", (artifact_id,)
+                )
+                connection.execute(
+                    "UPDATE image_artifact_authority SET quarantine_code=?,delivery_status='QUARANTINED',gate_status=? WHERE artifact_sha256=?",
+                    (error_code, status, artifact["sha256"]),
+                )
+                connection.execute(
+                    "UPDATE generation_calls SET status=?,failure_code=?,finished_at=? WHERE id=? AND status=?",
+                    (
+                        CallStatus.FAILED,
+                        error_code,
+                        utc_now(),
+                        generation_call_id,
+                        CallStatus.RUNNING,
+                    ),
+                )
+                connection.execute(
+                    "UPDATE asset_transactions SET status=?,updated_at=? WHERE id=? AND status<>?",
+                    (
+                        TransactionStatus.FAILED_RETRYABLE,
+                        utc_now(),
+                        transaction_id,
+                        TransactionStatus.COMMITTED,
+                    ),
+                )
+            self._event(
+                connection,
+                workflow_id,
+                stage_id,
+                "CROSS_FILE_GATE_RECORDED",
+                {"artifact_id": artifact_id, "error_code": error_code, "status": status},
+            )
+            return result_id
+
+    def create_image_package(
+        self,
+        transaction_id: str,
+        generation_call_id: str,
+        *,
+        authority_set_digest: str,
+        manifest_digest: str,
+        dependency_digest: str,
+        evidence_digest: str,
+        supersedes_id: str | None = None,
+    ) -> str:
+        """Create a persisted package candidate with fresh transaction/call lineage."""
+        package_id = uuid.uuid4().hex
+        now = utc_now()
+        with self.db.transaction() as connection:
+            workflow_id, stage_id = self._workflow_for_transaction(connection, transaction_id)
+            call = self._one(
+                connection,
+                "SELECT transaction_id FROM generation_calls WHERE id=?",
+                (generation_call_id,),
+            )
+            if call["transaction_id"] != transaction_id:
+                raise KernelError(
+                    "RK049_CALL_TRANSACTION_MISMATCH", "call belongs to another transaction"
+                )
+            if supersedes_id is not None:
+                previous = self._one(
+                    connection,
+                    "SELECT package_transaction_id,status FROM image_packages WHERE id=?",
+                    (supersedes_id,),
+                )
+                if previous["package_transaction_id"] == transaction_id:
+                    raise KernelError(
+                        "RK021_PACKAGE_LINEAGE_REUSE", "republish requires a new transaction"
+                    )
+            connection.execute(
+                "INSERT INTO image_packages(id,package_transaction_id,generation_call_id,artifact_id,authority_set_digest,manifest_digest,zip_digest,dependency_digest,evidence_digest,status,supersedes_id,superseded_by_id,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                (
+                    package_id,
+                    transaction_id,
+                    generation_call_id,
+                    None,
+                    authority_set_digest,
+                    manifest_digest,
+                    None,
+                    dependency_digest,
+                    evidence_digest,
+                    "CANDIDATE",
+                    supersedes_id,
+                    None,
+                    now,
+                    now,
+                ),
+            )
+            self._event(
+                connection,
+                workflow_id,
+                stage_id,
+                "IMAGE_PACKAGE_CANDIDATE",
+                {"package_id": package_id},
+            )
+        return package_id
+
+    def pass_image_package(self, package_id: str, artifact_id: str, zip_digest: str) -> None:
+        with self.db.transaction() as connection:
+            package = self._one(
+                connection,
+                "SELECT package_transaction_id,status FROM image_packages WHERE id=?",
+                (package_id,),
+            )
+            if package["status"] != "CANDIDATE":
+                raise KernelError("RK022_PACKAGE_STATE", "only a candidate package can pass")
+            workflow_id, stage_id = self._workflow_for_transaction(
+                connection, package["package_transaction_id"]
+            )
+            artifact = self._one(
+                connection, "SELECT byte_size FROM artifacts WHERE id=?", (artifact_id,)
+            )
+            connection.execute(
+                "UPDATE image_packages SET artifact_id=?,zip_digest=?,zip_size=?,status='PASS',updated_at=? WHERE id=?",
+                (artifact_id, zip_digest, artifact["byte_size"], utc_now(), package_id),
+            )
+            self._event(
+                connection, workflow_id, stage_id, "IMAGE_PACKAGE_PASS", {"package_id": package_id}
+            )
+
+    def publish_image_package(self, package_id: str) -> None:
+        with self.db.transaction() as connection:
+            package = self._one(
+                connection,
+                "SELECT package_transaction_id,status,supersedes_id FROM image_packages WHERE id=?",
+                (package_id,),
+            )
+            if package["status"] != "PASS":
+                raise KernelError("RK022_PACKAGE_STATE", "only a PASS package can publish")
+            workflow_id, stage_id = self._workflow_for_transaction(
+                connection, package["package_transaction_id"]
+            )
+            connection.execute(
+                "UPDATE image_packages SET status='PUBLISHED',updated_at=? WHERE id=?",
+                (utc_now(), package_id),
+            )
+            if package["supersedes_id"] is not None:
+                connection.execute(
+                    "UPDATE image_packages SET status='SUPERSEDED',superseded_by_id=?,updated_at=? WHERE id=? AND status IN ('STALE','QUARANTINED','PUBLISHED')",
+                    (package_id, utc_now(), package["supersedes_id"]),
+                )
+            self._event(
+                connection,
+                workflow_id,
+                stage_id,
+                "IMAGE_PACKAGE_PUBLISHED",
+                {"package_id": package_id},
+            )
+
+    def finalize_image_package_publication(
+        self,
+        package_id: str,
+        relative_path: str,
+        byte_size: int,
+        *,
+        fault_stage: str | None = None,
+    ) -> None:
+        """Commit publication metadata and lifecycle event atomically."""
+        with self.db.transaction() as connection:
+            package = self._one(
+                connection,
+                "SELECT package_transaction_id,status,supersedes_id FROM image_packages WHERE id=?",
+                (package_id,),
+            )
+            if package["status"] != "PASS":
+                raise KernelError("RK022_PACKAGE_STATE", "only a PASS package can publish")
+            workflow_id, stage_id = self._workflow_for_transaction(
+                connection, package["package_transaction_id"]
+            )
+            connection.execute(
+                "UPDATE image_packages SET status='PUBLISHED',published_relative_path=?,zip_size=?,updated_at=? WHERE id=?",
+                (relative_path, byte_size, utc_now(), package_id),
+            )
+            if fault_stage == "AFTER_LIFECYCLE":
+                raise KernelError("RK900_INJECTED_FAILURE", fault_stage)
+            if package["supersedes_id"] is not None:
+                connection.execute(
+                    "UPDATE image_packages SET status='SUPERSEDED',superseded_by_id=?,updated_at=? WHERE id=? AND status IN ('STALE','QUARANTINED','PUBLISHED')",
+                    (package_id, utc_now(), package["supersedes_id"]),
+                )
+            if fault_stage == "AFTER_SUPERSESSION":
+                raise KernelError("RK900_INJECTED_FAILURE", fault_stage)
+            self._event(
+                connection,
+                workflow_id,
+                stage_id,
+                "IMAGE_PACKAGE_PUBLISHED",
+                {"package_id": package_id, "relative_path": relative_path},
+            )
+            if fault_stage == "AFTER_EVENT":
+                raise KernelError("RK900_INJECTED_FAILURE", fault_stage)
+
+    def register_image_package_target(self, package_id: str, relative_path: str) -> None:
+        """Persist the intended canonical path before filesystem publication."""
+        with self.db.transaction() as connection:
+            package = self._one(
+                connection,
+                "SELECT status,published_relative_path FROM image_packages WHERE id=?",
+                (package_id,),
+            )
+            if package["status"] != "PASS":
+                raise KernelError("RK022_PACKAGE_STATE", "only a PASS package can set its target")
+            existing = package["published_relative_path"]
+            if existing is not None and existing != relative_path:
+                raise KernelError("RK029_PACKAGE_TARGET_MISMATCH", "package target is immutable")
+            connection.execute(
+                "UPDATE image_packages SET published_relative_path=?,updated_at=? WHERE id=?",
+                (relative_path, utc_now(), package_id),
+            )
+
+    def quarantine_image_package(self, package_id: str, error_code: str) -> None:
+        with self.db.transaction() as connection:
+            package = self._one(
+                connection,
+                "SELECT package_transaction_id,status FROM image_packages WHERE id=?",
+                (package_id,),
+            )
+            if package["status"] not in {"CANDIDATE", "PASS", "STALE"}:
+                raise KernelError(
+                    "RK022_PACKAGE_STATE", "package cannot be quarantined from current state"
+                )
+            workflow_id, stage_id = self._workflow_for_transaction(
+                connection, package["package_transaction_id"]
+            )
+            connection.execute(
+                "UPDATE image_packages SET status='QUARANTINED',updated_at=? WHERE id=?",
+                (utc_now(), package_id),
+            )
+            self._event(
+                connection,
+                workflow_id,
+                stage_id,
+                "IMAGE_PACKAGE_QUARANTINED",
+                {"package_id": package_id, "error_code": error_code},
+            )
+
+    def quarantine_image_package_recovery(self, package_id: str, error_code: str) -> None:
+        """Fail closed when persisted publication bytes are absent or corrupt."""
+        with self.db.transaction() as connection:
+            package = self._one(
+                connection,
+                "SELECT package_transaction_id,status FROM image_packages WHERE id=?",
+                (package_id,),
+            )
+            if package["status"] == "QUARANTINED":
+                return
+            workflow_id, stage_id = self._workflow_for_transaction(
+                connection, package["package_transaction_id"]
+            )
+            connection.execute(
+                "UPDATE image_packages SET status='QUARANTINED',updated_at=? WHERE id=?",
+                (utc_now(), package_id),
+            )
+            self._event(
+                connection,
+                workflow_id,
+                stage_id,
+                "IMAGE_PACKAGE_RECOVERY_QUARANTINED",
+                {"package_id": package_id, "error_code": error_code},
+            )
+
+    def mark_image_packages_stale(self, authority_set_digest: str, error_code: str) -> int:
+        """Persist stale propagation without deleting history or package bytes."""
+        with self.db.transaction() as connection:
+            rows = connection.execute(
+                "SELECT id,package_transaction_id,artifact_id FROM image_packages WHERE authority_set_digest=? AND status IN ('CANDIDATE','PASS','PUBLISHED')",
+                (authority_set_digest,),
+            ).fetchall()
+            for row in rows:
+                connection.execute(
+                    "UPDATE image_packages SET status='STALE',updated_at=? WHERE id=?",
+                    (utc_now(), row["id"]),
+                )
+                if row["artifact_id"] is not None:
+                    connection.execute(
+                        "UPDATE gate_results SET is_current=0 WHERE artifact_id=? AND is_current=1",
+                        (row["artifact_id"],),
+                    )
+                workflow_id, stage_id = self._workflow_for_transaction(
+                    connection, row["package_transaction_id"]
+                )
+                self._event(
+                    connection,
+                    workflow_id,
+                    stage_id,
+                    "IMAGE_PACKAGE_STALE",
+                    {"package_id": row["id"], "error_code": error_code},
+                )
+            return len(rows)
+
+    def recover_image_package_supersession(self, package_id: str) -> str:
+        """Atomically repair a published successor's missing predecessor backlink."""
+        with self.db.transaction() as connection:
+            package = self._one(
+                connection,
+                "SELECT package_transaction_id,status,supersedes_id FROM image_packages WHERE id=?",
+                (package_id,),
+            )
+            if package["status"] != "PUBLISHED" or package["supersedes_id"] is None:
+                raise KernelError(
+                    "RK038_SUPERSESSION_NOT_RECOVERABLE",
+                    "package is not a published successor",
+                )
+            predecessor = self._one(
+                connection,
+                "SELECT status,superseded_by_id FROM image_packages WHERE id=?",
+                (package["supersedes_id"],),
+            )
+            if (
+                predecessor["status"] == "SUPERSEDED"
+                and predecessor["superseded_by_id"] == package_id
+            ):
+                return "SUPERSEDED"
+            if predecessor["status"] not in {"STALE", "QUARANTINED", "PUBLISHED"}:
+                raise KernelError(
+                    "RK039_SUPERSESSION_CONFLICT", "predecessor state cannot be superseded"
+                )
+            workflow_id, stage_id = self._workflow_for_transaction(
+                connection, package["package_transaction_id"]
+            )
+            connection.execute(
+                "UPDATE image_packages SET status='SUPERSEDED',superseded_by_id=?,updated_at=? WHERE id=?",
+                (package_id, utc_now(), package["supersedes_id"]),
+            )
+            self._event(
+                connection,
+                workflow_id,
+                stage_id,
+                "IMAGE_PACKAGE_SUPERSESSION_RECOVERED",
+                {"package_id": package_id, "supersedes_id": package["supersedes_id"]},
+            )
+            return "SUPERSEDED"
 
     def progress(self, stage_id: str) -> tuple[int, int]:
         row = self.db.connection.execute(

@@ -30,12 +30,16 @@ def test_new_database_wal_foreign_keys_tables_and_idempotent_migration(tmp_path:
         "artifact_bindings",
         "gate_results",
         "events",
+        "image_artifact_authority",
+        "cross_file_gate_results",
+        "image_packages",
+        "package_orphan_inventory",
         "schema_migrations",
     }
     assert required <= names
     database.close()
     reopened = Database(tmp_path / "state.sqlite3", MIGRATIONS)
-    assert reopened.connection.execute("SELECT COUNT(*) FROM schema_migrations").fetchone()[0] == 2
+    assert reopened.connection.execute("SELECT COUNT(*) FROM schema_migrations").fetchone()[0] == 8
     call_columns = {
         row[1] for row in reopened.connection.execute("PRAGMA table_info(generation_calls)")
     }
@@ -73,6 +77,37 @@ def test_m3_database_upgrades_to_migration_002(tmp_path: Path) -> None:
     columns = {row[1] for row in upgraded.connection.execute("PRAGMA table_info(generation_calls)")}
     assert "model_identity" in columns
     upgraded.close()
+
+
+def test_m5_database_upgrades_directly_through_m6_migrations(tmp_path: Path) -> None:
+    copied = tmp_path / "migrations"
+    copied.mkdir()
+    for version in ("001", "002"):
+        shutil.copy2(next(MIGRATIONS.glob(f"{version}_*.sql")), copied)
+    database = Database(tmp_path / "state.sqlite3", copied)
+    baseline = database.connection.execute(
+        "SELECT version,checksum FROM schema_migrations ORDER BY version"
+    ).fetchall()
+    assert [row["version"] for row in baseline] == ["001", "002"]
+    database.close()
+
+    for version in ("003", "004", "005", "006", "007", "008"):
+        shutil.copy2(next(MIGRATIONS.glob(f"{version}_*.sql")), copied)
+    upgraded = Database(tmp_path / "state.sqlite3", copied)
+    first = upgraded.connection.execute(
+        "SELECT version,checksum FROM schema_migrations ORDER BY version"
+    ).fetchall()
+    assert [row["version"] for row in first] == [f"{value:03d}" for value in range(1, 9)]
+    assert all(len(row["checksum"]) == 64 for row in first)
+    upgraded.close()
+
+    reopened = Database(tmp_path / "state.sqlite3", copied)
+    second = reopened.connection.execute(
+        "SELECT version,checksum FROM schema_migrations ORDER BY version"
+    ).fetchall()
+    assert [tuple(row) for row in second] == [tuple(row) for row in first]
+    assert reopened.connection.execute("SELECT COUNT(*) FROM image_packages").fetchone()[0] == 0
+    reopened.close()
 
 
 def test_foreign_key_and_unique_constraint_are_final_guards(tmp_path: Path) -> None:

@@ -23,6 +23,62 @@ class PngInfo:
     metadata: dict[str, object]
 
 
+def validate_image_qa(
+    data: bytes,
+    artifact_path: str,
+    *,
+    expected_dimensions: tuple[int, int],
+    expected_ratio: float | None = None,
+    require_alpha: bool = False,
+    luma_range: tuple[float, float] = (0.0, 255.0),
+) -> PngInfo:
+    """Run the M6 postwrite QA bundle on exact PNG bytes."""
+    info = validate_png(
+        data,
+        artifact_path,
+        expected_dimensions=expected_dimensions,
+        required_metadata_key="audio_story",
+    )
+    if expected_ratio is not None and abs(info.width / info.height - expected_ratio) > 1e-6:
+        _fail("IMG_QA002_RATIO", "PNG ratio mismatch", artifact_path)
+    if require_alpha and info.color_type != 6:
+        _fail("IMG_QA003_ALPHA", "PNG alpha channel is required", artifact_path)
+    luma = _mean_luma(data, info.width, info.height, info.color_type)
+    if not luma_range[0] <= luma <= luma_range[1]:
+        _fail("IMG_QA004_LUMA", "PNG luma is outside configured range", artifact_path)
+    return info
+
+
+def _mean_luma(data: bytes, width: int, height: int, color_type: int) -> float:
+    offset = len(PNG_SIGNATURE)
+    compressed = bytearray()
+    while offset < len(data):
+        length = struct.unpack(">I", data[offset : offset + 4])[0]
+        kind = data[offset + 4 : offset + 8]
+        payload = data[offset + 8 : offset + 8 + length]
+        offset += length + 12
+        if kind == b"IDAT":
+            compressed.extend(payload)
+        if kind == b"IEND":
+            break
+    decoded = zlib.decompress(bytes(compressed))
+    channels = {0: 1, 2: 3, 4: 2, 6: 4}[color_type]
+    total = 0.0
+    count = 0
+    cursor = 0
+    for _ in range(height):
+        cursor += 1  # filter byte; the basic validator accepts the scanline shape
+        row = decoded[cursor : cursor + width * channels]
+        cursor += width * channels
+        for index in range(0, len(row), channels):
+            if channels == 1:
+                total += row[index]
+            else:
+                total += 0.2126 * row[index] + 0.7152 * row[index + 1] + 0.0722 * row[index + 2]
+            count += 1
+    return total / count if count else 0.0
+
+
 def validate_png(
     data: bytes,
     artifact_path: str,
