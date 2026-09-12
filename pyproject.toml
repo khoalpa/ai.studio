@@ -51,6 +51,7 @@ testpaths = ["tests"]
 markers = [
   "gpu: requires local GPU hardware and is excluded from the default suite",
   "local_llm: explicit smoke test requiring a locally installed llama.cpp server",
+  "local_ocr: explicit smoke test requiring pinned local Tesseract dependencies",
 ]
 
 [tool.coverage.run]

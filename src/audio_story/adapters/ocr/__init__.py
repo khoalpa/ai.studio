@@ -5,11 +5,13 @@ from audio_story.adapters.ocr.base import (
     OcrAdapterError,
     OcrEvidence,
     OcrRequest,
+    compute_evidence_digest,
     inspect_ocr,
     normalize_ocr_text,
     validate_ocr_evidence,
 )
 from audio_story.adapters.ocr.mock import DeterministicMockOcr
+from audio_story.adapters.ocr.tesseract import TesseractConfig, TesseractOcrAdapter
 
 __all__ = [
     "DeterministicMockOcr",
@@ -17,6 +19,9 @@ __all__ = [
     "OcrAdapterError",
     "OcrEvidence",
     "OcrRequest",
+    "compute_evidence_digest",
+    "TesseractConfig",
+    "TesseractOcrAdapter",
     "inspect_ocr",
     "normalize_ocr_text",
     "validate_ocr_evidence",

@@ -236,6 +236,18 @@ def test_ocr_confidence_box_digest_and_stale_input_fail_closed() -> None:
         (OcrEvidence("", 0.9, (4, 4, 3, 9), "fixture", "a" * 64), image, 0.8, "OCR003"),
         (OcrEvidence("", 0.9, (0, 0, 21, 9), "fixture", "a" * 64), image, 0.8, "OCR003"),
         (OcrEvidence("", 0.9, valid.locator, "fixture", "bad"), image, 0.8, "OCR004"),
+        (
+            OcrEvidence("A  B", 0.9, valid.locator, "fixture", "a" * 64),
+            image,
+            0.8,
+            "OCR017",
+        ),
+        (
+            OcrEvidence("", 0.9, valid.locator, "fixture", "a" * 64, page_identity="other"),
+            image,
+            0.8,
+            "OCR016",
+        ),
     )
     for evidence, content, minimum, code in cases:
         with pytest.raises(OcrAdapterError, match=code):
