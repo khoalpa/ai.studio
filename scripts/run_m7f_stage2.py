@@ -31,7 +31,11 @@ def main() -> int:
     kernel = WorkflowKernel(args.workspace)
     try:
         workflow_id = kernel.create_workflow(
-            str(source.manifest["active_profile"]), "STAGE2", "CREATE", canonical_digest, workflow_digest
+            str(source.manifest["active_profile"]),
+            "STAGE2",
+            "CREATE",
+            canonical_digest,
+            workflow_digest,
         )
         kernel.transition_workflow(workflow_id, WorkflowStatus.RUNNING)
         stage_id = kernel.start_stage(workflow_id, "STAGE2", canonical_digest)
@@ -42,11 +46,19 @@ def main() -> int:
             "next_basename": plan.execution_queue[0],
         }
         if args.execute:
-            adapter = ComfyUIImageAdapter(ComfyUIConfig(workflow_path=args.workflow, timeout_seconds=300.0))
+            adapter = ComfyUIImageAdapter(
+                ComfyUIConfig(workflow_path=args.workflow, timeout_seconds=300.0)
+            )
             progress = args.workspace / "progress" / "stage2_image_progress.json"
             execution = Stage2ZoneExecutor(kernel, stage_id, source, plan, adapter, progress)
             outcome = execution.execute_next()
-            result.update({"status": outcome.status, "committed_count": outcome.committed_count, "next_basename": outcome.next_pending_basename})
+            result.update(
+                {
+                    "status": outcome.status,
+                    "committed_count": outcome.committed_count,
+                    "next_basename": outcome.next_pending_basename,
+                }
+            )
         print(json.dumps(result, ensure_ascii=True, sort_keys=True))
         return 0
     finally:
