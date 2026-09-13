@@ -11,6 +11,7 @@ from audio_story.adapters.llm.mock import DeterministicMockAdapter
 from audio_story.cli import main
 from audio_story.domain.stage1 import Stage1Request, Stage1Status
 from audio_story.validation.canonical import sha256_bytes
+from audio_story.validation.stage2 import load_stage1_package
 from audio_story.workflows import Stage1Service, WorkflowKernel
 from audio_story.workflows.recovery import recover
 
@@ -18,6 +19,26 @@ from audio_story.workflows.recovery import recover
 @pytest.fixture
 def canonical_path() -> Path:
     return Path(__file__).parents[2] / "canonical" / "ChatGPT_prompt_v3.16.13.txt"
+
+
+def test_stage2_intake_reopens_authoritative_stage1_package(tmp_path, canonical_path) -> None:
+    kernel = WorkflowKernel(tmp_path)
+    try:
+        result = Stage1Service(kernel, DeterministicMockAdapter(), canonical_path).start(
+            Stage1Request(
+                "YOUTH_SAFE", duration_minutes=12, duration_confirmed=True, test_mode=True
+            )
+        )
+        assert result.package_path is not None
+        before = result.package_path.read_bytes()
+        source = load_stage1_package(result.package_path, test_mode=True)
+        assert source.package_digest_sha256 == sha256_bytes(before)
+        assert source.manifest["package_stage"] == "STAGE1"
+        assert source.manifest["active_profile"] == "YOUTH_SAFE"
+        assert source.series_anchor_bytes is None
+        assert result.package_path.read_bytes() == before
+    finally:
+        kernel.close()
 
 
 @pytest.mark.parametrize(
