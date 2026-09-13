@@ -138,6 +138,15 @@ def validate_png(
                     _fail(
                         "DP007_PNG_METADATA", "malformed JSON PNG metadata", artifact_path, offset
                     )
+        elif chunk_type == b"iTXt":
+            parts = payload.split(b"\0", 5)
+            if len(parts) == 6 and parts[1:5] == [b"", b"", b"", b""]:
+                try:
+                    metadata[parts[0].decode("latin-1")] = json.loads(parts[5].decode("utf-8"))
+                except (UnicodeDecodeError, json.JSONDecodeError):
+                    _fail(
+                        "DP007_PNG_METADATA", "malformed JSON PNG metadata", artifact_path, offset
+                    )
         elif chunk_type == b"IEND":
             saw_end = True
             offset = end

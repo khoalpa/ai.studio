@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from contextlib import suppress
 from dataclasses import dataclass, replace
 from pathlib import Path
@@ -11,6 +12,7 @@ from audio_story.adapters.image.base import (
     DeliveryStatus,
     ImageAdapterError,
     ImageRequest,
+    ImageResponse,
     LocalImageAdapter,
 )
 from audio_story.adapters.image.resource import ImageResourceError, gpu_job
@@ -76,6 +78,7 @@ def generate_single_image(
     max_attempts: int = 2,
     typography: ProductionTypographyJob | None = None,
     ocr: ProductionOcrJob | None = None,
+    metadata_binder: Callable[[bytes, ImageRequest, ImageResponse], bytes] | None = None,
 ) -> ImageTransactionResult:
     """Generate exactly one PNG, validate it, and commit only a PASS candidate."""
     cancellation = cancellation if cancellation is not None else Event()
@@ -96,15 +99,18 @@ def generate_single_image(
             with gpu_job():
                 response = adapter.generate_image(active_request, cancellation)
             _raise_if_cancelled(cancellation, adapter, call_id)
+            if metadata_binder is not None:
+                artifact_bytes = metadata_binder(response.content, active_request, response)
+            else:
+                artifact_bytes = response.content
             base_info = validate_image_qa(
-                response.content,
+                artifact_bytes,
                 active_request.basename,
                 expected_dimensions=(
                     active_request.requested_width,
                     active_request.requested_height,
                 ),
             )
-            artifact_bytes = response.content
             typography_evidence = None
             base_ocr = None
             final_ocr = None

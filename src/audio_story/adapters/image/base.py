@@ -5,6 +5,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from threading import Event
+from typing import Any
 
 
 class ImageAdapterError(RuntimeError):
@@ -37,6 +38,7 @@ class ImageRequest:
     timeout_seconds: float
     transaction_id: str
     generation_call_id: str
+    commitment_context: dict[str, Any] | None = None
 
     def __post_init__(self) -> None:
         if self.requested_output_count != 1:

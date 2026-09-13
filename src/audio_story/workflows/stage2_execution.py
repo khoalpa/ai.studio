@@ -10,9 +10,17 @@ from pathlib import Path
 from audio_story.adapters.image import ImageRequest, LocalImageAdapter
 from audio_story.domain.stage2 import Stage1PackageInput, Stage2Error, Stage2ZonePlan
 from audio_story.validation.canonical import canonical_json_bytes, sha256_bytes
-from audio_story.validation.stage2 import serialize_stage2_progress, validate_visual_plan_bytes
+from audio_story.validation.stage2 import (
+    serialize_stage2_progress,
+    validate_visual_bible_bytes,
+    validate_visual_plan_bytes,
+)
 from audio_story.workflows.image_transaction import ImageTransactionResult, generate_single_image
 from audio_story.workflows.kernel import WorkflowKernel
+from audio_story.workflows.stage2_commitment import (
+    bind_stage2_commitments,
+    validate_stage2_commitments,
+)
 from audio_story.workflows.stage2_planning import compile_stage2_invocation
 
 
@@ -52,6 +60,16 @@ class Stage2ZoneExecutor:
         if next_name is None:
             return Stage2ExecutionResult("READY_FOR_AGGREGATE_GATES", 10, None, None, None)
         invocation = compile_stage2_invocation(self.plan, next_name, committed_basenames=committed)
+        plan_value = validate_visual_plan_bytes(self.plan.visual_plan_bytes)
+        bible_value = validate_visual_bible_bytes(self.plan.visual_bible_bytes)
+        asset = next(item for item in plan_value["assets"] if item["basename"] == next_name)
+        role = (
+            "IDENTITY_PILOT"
+            if next_name == "introduction.png"
+            else "ART_DIRECTION_CALIBRATION"
+            if next_name == "opening.png"
+            else "STANDARD"
+        )
         payload_digest = sha256_bytes(canonical_json_bytes(invocation.payload))
         request = ImageRequest(
             next_name,
@@ -66,6 +84,13 @@ class Stage2ZoneExecutor:
             30.0,
             "preflight",
             "preflight",
+            {
+                "transaction_role": role,
+                "transaction_index": self.plan.execution_queue.index(next_name) + 1,
+                "art_direction_id": bible_value["art_direction_id"],
+                "plan_digest_sha256": sha256_bytes(self.plan.visual_plan_bytes),
+                "plan_snapshot": asset,
+            },
         )
         result = generate_single_image(
             self.kernel,
@@ -75,7 +100,14 @@ class Stage2ZoneExecutor:
             owner_stage="STAGE2",
             artifact_role="LANDSCAPE",
             max_attempts=1,
+            metadata_binder=bind_stage2_commitments,
         )
+        if result.status == "AUTHORITATIVE" and result.digest is not None:
+            validate_stage2_commitments(
+                self.kernel.store.get_artifact_by_digest(result.digest),
+                next_name,
+                result.transaction_id,
+            )
         current = self._committed()
         path = None if len(current) == 10 else self._persist_progress()
         return Stage2ExecutionResult(
