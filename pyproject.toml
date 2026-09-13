@@ -9,7 +9,7 @@ description = "Offline hybrid runtime for the Audio Story v3.16.13 contract"
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "Proprietary" }
-dependencies = []
+dependencies = ["Pillow>=11,<12"]
 
 [project.optional-dependencies]
 dev = [

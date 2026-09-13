@@ -51,6 +51,8 @@ class TesseractConfig:
     cleanup_timeout_seconds: float = 2.0
     stderr_limit_bytes: int = 16_384
     stdout_limit_bytes: int = 1_048_576
+    tsv_config_path: Path | None = None
+    tsv_config_sha256: str = ""
 
     def __post_init__(self) -> None:
         if not self.executable.is_file() or not self.tessdata_dir.is_dir():
@@ -68,6 +70,12 @@ class TesseractConfig:
             raise OcrAdapterError("OCR008_REQUEST_INVALID", "Tesseract limits are invalid")
         if self.stderr_limit_bytes <= 0 or self.stdout_limit_bytes <= 0:
             raise OcrAdapterError("OCR008_REQUEST_INVALID", "output limit is invalid")
+        if (self.tsv_config_path is None) != (not self.tsv_config_sha256):
+            raise OcrAdapterError("OCR008_REQUEST_INVALID", "TSV config binding is incomplete")
+        if self.tsv_config_path is not None and (
+            not self.tsv_config_path.is_file() or not _is_digest(self.tsv_config_sha256)
+        ):
+            raise OcrAdapterError("OCR009_DEPENDENCY_MISSING", "TSV config is missing")
 
 
 class TesseractOcrAdapter(LocalOcrAdapter):
@@ -144,6 +152,10 @@ class TesseractOcrAdapter(LocalOcrAdapter):
                 raise OcrAdapterError("OCR009_DEPENDENCY_MISSING", "language model is missing")
             if _file_digest(model) != configured[language]:
                 raise OcrAdapterError("OCR011_DEPENDENCY_DIGEST", "language model changed")
+        if self.config.tsv_config_path is not None and (
+            _file_digest(self.config.tsv_config_path) != self.config.tsv_config_sha256
+        ):
+            raise OcrAdapterError("OCR011_DEPENDENCY_DIGEST", "TSV config changed")
 
     def _run(self, image_bytes: bytes, request: OcrRequest, cancellation: Event) -> bytes:
         command = [
@@ -156,7 +168,7 @@ class TesseractOcrAdapter(LocalOcrAdapter):
             "+".join(request.languages),
             "--psm",
             str(self.config.page_segmentation_mode),
-            "tsv",
+            str(self.config.tsv_config_path or "tsv"),
         ]
         try:
             self._process = subprocess.Popen(
@@ -288,6 +300,7 @@ def _request_digest(
         "languages": list(request.languages),
         "page_identity": request.page_identity,
         "region": list(request.region),
+        "tsv_config_sha256": config.tsv_config_sha256,
     }
     return sha256(json.dumps(payload, separators=(",", ":")).encode()).hexdigest()
 

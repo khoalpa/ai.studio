@@ -46,6 +46,21 @@ def _config(tmp_path: Path, **changes: object) -> TesseractConfig:
     return TesseractConfig(**values)  # type: ignore[arg-type]
 
 
+def test_separate_tsv_config_is_digest_bound(tmp_path: Path) -> None:
+    config_file = tmp_path / "tsv"
+    config_file.write_bytes(b"tessedit_create_tsv 1")
+    config = _config(
+        tmp_path,
+        tsv_config_path=config_file,
+        tsv_config_sha256=_digest(config_file),
+    )
+    adapter = TesseractOcrAdapter(config)
+    adapter._verify_dependencies(("eng",))
+    config_file.write_bytes(b"changed")
+    with pytest.raises(OcrAdapterError, match="OCR011_DEPENDENCY_DIGEST"):
+        adapter._verify_dependencies(("eng",))
+
+
 def _request(image: bytes, **changes: object) -> OcrRequest:
     values: dict[str, object] = {
         "image_sha256": sha256(image).hexdigest(),

@@ -109,3 +109,11 @@ A second request was cancelled after its real prompt ID was captured;
 `IMG004_CANCELLED` without accepting an image. The ComfyUI slice is ready for
 review; this does not promote the still-unverified OCR/typography production
 items or authorize M7.
+
+Production typography follow-up uses digest-bound DejaVu Sans and Pillow. Two
+independent renders are byte-identical at SHA-256
+`04ee5c0de3971e2b63c3dd09ac4a5bcd1177ac602b585d9bfae2d58dd8278438`.
+The reopened 1024x1024 cover passes PNG validation. Tesseract detects the
+rendered title at confidence `0.9230547525`, so the residual-text gate is true.
+Exact Vietnamese OCR remains `NOT_VERIFIED` because only `eng.traineddata` is
+installed; the engine does not preserve Vietnamese diacritics.
