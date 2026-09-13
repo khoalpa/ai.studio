@@ -46,6 +46,7 @@ class Stage2ZoneExecutor:
         progress_path: Path,
         workflow_digest: str | None = None,
         model_identity: str = "deterministic-mock",
+        timeout_seconds: float = 30.0,
     ) -> None:
         self.kernel = kernel
         self.stage_id = stage_id
@@ -55,6 +56,7 @@ class Stage2ZoneExecutor:
         self.progress_path = progress_path
         self.workflow_digest = workflow_digest or sha256_bytes(self.plan.visual_plan_bytes)
         self.model_identity = model_identity
+        self.timeout_seconds = timeout_seconds
 
     def execute_next(self) -> Stage2ExecutionResult:
         committed = self._committed()
@@ -85,7 +87,7 @@ class Stage2ZoneExecutor:
             3840,
             2160,
             "PNG",
-            30.0,
+            self.timeout_seconds,
             "preflight",
             "preflight",
             {

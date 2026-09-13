@@ -59,6 +59,7 @@ def main() -> int:
                 progress,
                 workflow_digest=workflow_digest,
                 model_identity="sd_xl_base_1.0.safetensors",
+                timeout_seconds=300.0,
             )
             outcome = execution.execute_next()
             result.update(
