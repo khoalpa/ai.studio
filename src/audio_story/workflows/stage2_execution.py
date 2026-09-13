@@ -44,6 +44,8 @@ class Stage2ZoneExecutor:
         plan: Stage2ZonePlan,
         adapter: LocalImageAdapter,
         progress_path: Path,
+        workflow_digest: str | None = None,
+        model_identity: str = "deterministic-mock",
     ) -> None:
         self.kernel = kernel
         self.stage_id = stage_id
@@ -51,6 +53,8 @@ class Stage2ZoneExecutor:
         self.plan = plan
         self.adapter = adapter
         self.progress_path = progress_path
+        self.workflow_digest = workflow_digest or sha256_bytes(self.plan.visual_plan_bytes)
+        self.model_identity = model_identity
 
     def execute_next(self) -> Stage2ExecutionResult:
         committed = self._committed()
@@ -74,8 +78,8 @@ class Stage2ZoneExecutor:
         request = ImageRequest(
             next_name,
             payload_digest,
-            sha256_bytes(self.plan.visual_plan_bytes),
-            "deterministic-mock",
+            self.workflow_digest,
+            self.model_identity,
             self.plan.execution_queue.index(next_name) + 1,
             1,
             3840,

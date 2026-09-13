@@ -50,7 +50,16 @@ def main() -> int:
                 ComfyUIConfig(workflow_path=args.workflow, timeout_seconds=300.0)
             )
             progress = args.workspace / "progress" / "stage2_image_progress.json"
-            execution = Stage2ZoneExecutor(kernel, stage_id, source, plan, adapter, progress)
+            execution = Stage2ZoneExecutor(
+                kernel,
+                stage_id,
+                source,
+                plan,
+                adapter,
+                progress,
+                workflow_digest=workflow_digest,
+                model_identity="sd_xl_base_1.0.safetensors",
+            )
             outcome = execution.execute_next()
             result.update(
                 {
