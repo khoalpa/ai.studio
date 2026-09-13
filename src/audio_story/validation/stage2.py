@@ -79,6 +79,17 @@ VISUAL_BIBLE_ROOT = (
     "landscape_reference_map",
     "dependency_digest",
 )
+PROGRESS_ASSET_ROOT = (
+    "basename",
+    "execution_index",
+    "packaging_index",
+    "queue_status",
+    "asset_source",
+    "file_path",
+    "file_sha256",
+    "transaction_id",
+    "postwrite_validation_status",
+)
 _HEX64 = re.compile(r"^[0-9a-f]{64}$")
 _ROLES = {"COVER", "GREETING", "ZONE", "SCENE", "FAREWELL", "OUTRO"}
 _MODES = {"ZONE", "SCENE"}
@@ -279,6 +290,136 @@ def validate_visual_bible_bytes(data: bytes) -> OrderedObject:
         tuple(references) in {(), ZONE_IMAGE_BASENAMES},
         "M7A217_REFERENCE_SET",
         "$.landscape_reference_map",
+    )
+    return parsed
+
+
+def serialize_stage2_progress(value: Mapping[str, Any]) -> bytes:
+    materialized = OrderedDict(value)
+    materialized["progress_digest_sha256"] = None
+    materialized["progress_digest_sha256"] = sha256_bytes(canonical_json_bytes(materialized))
+    data = ordered_json_bytes(materialized)
+    validate_stage2_progress_bytes(data)
+    return data
+
+
+def validate_stage2_progress_bytes(data: bytes) -> OrderedObject:
+    parsed = _ordered(data, "stage_image_progress.json")
+    validate_schema(parsed, "stage_image_progress.json", "INPUT", "stage_image_progress.json")
+    _require(parsed.get("bundle_kind") == "STAGE2", "M7C001_BUNDLE_KIND", "$.bundle_kind")
+    _require(parsed.get("stage") == "STAGE2", "M7C002_STAGE", "$.stage")
+    _require(parsed.get("orientation") == "LANDSCAPE", "M7C003_ORIENTATION", "$.orientation")
+    _require(
+        parsed.get("original_operation_mode") == "CREATE",
+        "M7C004_MODE",
+        "$.original_operation_mode",
+    )
+    for key in (
+        "input_story_package_digest_sha256",
+        "input_story_zip_sha256",
+        "active_basename_set_digest_sha256",
+        "visual_plan_digest_sha256",
+        "visual_bible_digest_sha256",
+    ):
+        _digest(parsed.get(key), "M7C005_DIGEST", f"$.{key}")
+    _require(
+        parsed.get("visual_bible_availability") == "REQUIRED_PRESENT",
+        "M7C006_BIBLE",
+        "$.visual_bible_availability",
+    )
+    assets = parsed.get("assets")
+    _require(isinstance(assets, list) and len(assets) == 10, "M7C007_ASSETS", "$.assets")
+    assert isinstance(assets, list)
+    committed = []
+    pending = []
+    for index, asset in enumerate(assets):
+        validate_field_order(
+            asset, PROGRESS_ASSET_ROOT, "stage_image_progress.json", f"$.assets[{index}]"
+        )
+        basename = asset.get("basename")
+        _require(
+            basename == ZONE_IMAGE_BASENAMES[index], "M7C008_QUEUE", f"$.assets[{index}].basename"
+        )
+        _require(
+            asset.get("execution_index") == index + 1 and asset.get("packaging_index") == index + 1,
+            "M7C009_INDEX",
+            f"$.assets[{index}]",
+        )
+        if asset.get("queue_status") == "COMMITTED":
+            _require(
+                asset.get("asset_source") == "CURRENT_OPERATION",
+                "M7C010_SOURCE",
+                f"$.assets[{index}].asset_source",
+            )
+            _require(
+                asset.get("file_path") == f"landscape/{basename}",
+                "M7C011_PATH",
+                f"$.assets[{index}].file_path",
+            )
+            _digest(
+                asset.get("file_sha256"), "M7C012_FILE_DIGEST", f"$.assets[{index}].file_sha256"
+            )
+            _require(
+                isinstance(asset.get("transaction_id"), str) and bool(asset.get("transaction_id")),
+                "M7C013_TRANSACTION",
+                f"$.assets[{index}].transaction_id",
+            )
+            _require(
+                asset.get("postwrite_validation_status") == "PASS",
+                "M7C014_POSTWRITE",
+                f"$.assets[{index}].postwrite_validation_status",
+            )
+            committed.append(basename)
+        else:
+            _require(
+                asset.get("queue_status") == "PENDING",
+                "M7C015_STATUS",
+                f"$.assets[{index}].queue_status",
+            )
+            _require(
+                all(
+                    asset.get(key) is None
+                    for key in (
+                        "asset_source",
+                        "file_path",
+                        "file_sha256",
+                        "transaction_id",
+                        "postwrite_validation_status",
+                    )
+                ),
+                "M7C016_PENDING_FIELDS",
+                f"$.assets[{index}]",
+            )
+            pending.append(basename)
+    _require(parsed.get("required_count") == 10, "M7C017_COUNT", "$.required_count")
+    _require(parsed.get("committed_count") == len(committed), "M7C017_COUNT", "$.committed_count")
+    _require(
+        parsed.get("pending_count") == len(pending) and parsed.get("failed_count") == 0,
+        "M7C017_COUNT",
+        "$.pending_count",
+    )
+    _require(
+        parsed.get("last_committed_basename") == (committed[-1] if committed else None),
+        "M7C018_LAST",
+        "$.last_committed_basename",
+    )
+    _require(
+        parsed.get("next_pending_basename") == (pending[0] if pending else None),
+        "M7C019_NEXT",
+        "$.next_pending_basename",
+    )
+    _require(bool(pending), "M7C019_NEXT", "$.next_pending_basename")
+    missing = [f"landscape/{name}" for name in ZONE_IMAGE_BASENAMES if name in pending]
+    _require(parsed.get("missing_assets") == missing, "M7C020_MISSING", "$.missing_assets")
+    _require(parsed.get("status") == "IN_PROGRESS", "M7C021_PROGRESS_STATUS", "$.status")
+    expected = parsed.get("progress_digest_sha256")
+    _digest(expected, "M7C022_PROGRESS_DIGEST", "$.progress_digest_sha256")
+    projection = OrderedDict(parsed)
+    projection["progress_digest_sha256"] = None
+    _require(
+        expected == sha256_bytes(canonical_json_bytes(projection)),
+        "M7C022_PROGRESS_DIGEST",
+        "$.progress_digest_sha256",
     )
     return parsed
 

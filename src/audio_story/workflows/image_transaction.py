@@ -79,7 +79,7 @@ def generate_single_image(
 ) -> ImageTransactionResult:
     """Generate exactly one PNG, validate it, and commit only a PASS candidate."""
     cancellation = cancellation if cancellation is not None else Event()
-    transaction_id = kernel.get_or_create_transaction(stage_id, owner_stage, request.basename)
+    transaction_id = kernel.get_or_create_transaction(stage_id, artifact_role, request.basename)
     last_call_id: str | None = None
     for _ in range(max_attempts):
         call_id = kernel.begin_generation_call(
