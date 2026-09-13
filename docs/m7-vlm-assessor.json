@@ -1,0 +1,17 @@
+{
+  "schema_version": "1.0",
+  "assessor_id": "qwen2.5-vl-7b-stage2-semantic",
+  "model_family": "Qwen2.5-VL-7B-Instruct",
+  "model_path": "D:\\Documents\\Models\\Qwen2.5-VL-7B-Instruct",
+  "backend": "transformers",
+  "device": "cuda:0",
+  "quantization": "4-bit-NF4",
+  "dtype": "bfloat16",
+  "temperature": 0.0,
+  "offline": true,
+  "input_contract": "exact_png_bytes_plus_visual_plan_asset",
+  "output_contract": "strict_json_semantic_assessment",
+  "license": "Apache-2.0",
+  "provenance_status": "USER_CONFIRMED_LOCAL_COPY",
+  "model_sha256_manifest_status": "PENDING_RUNTIME_HASH"
+}
