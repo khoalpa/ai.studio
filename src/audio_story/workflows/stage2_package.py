@@ -9,17 +9,17 @@ from pathlib import Path
 from typing import Any
 
 from audio_story.domain.stage2 import (
+    ZONE_IMAGE_BASENAMES,
     Stage1PackageInput,
     Stage2Error,
     Stage2ZonePlan,
-    ZONE_IMAGE_BASENAMES,
 )
 from audio_story.validation.archives import inspect_zip, safe_extract
 from audio_story.validation.canonical import canonical_json_bytes, sha256_bytes
 from audio_story.validation.stage1 import ordered_json_bytes
+from audio_story.workflows.kernel import WorkflowKernel
 from audio_story.workflows.stage2_commitment import validate_stage2_commitments
 from audio_story.workflows.stage2_gates import Stage2GateResult, require_stage2_gate_pass
-from audio_story.workflows.kernel import WorkflowKernel
 
 
 def build_stage2_checkpoint(
