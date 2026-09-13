@@ -57,7 +57,12 @@ def main() -> int:
     generated = model.generate(**inputs, max_new_tokens=256, do_sample=False)
     output_tokens = generated[:, inputs["input_ids"].shape[1] :]
     raw = processor.batch_decode(output_tokens, skip_special_tokens=True)[0].strip()
-    parsed = json.loads(raw)
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    args.output.with_suffix(".raw.txt").write_text(raw, encoding="utf-8")
+    candidate = raw
+    if candidate.startswith("```"):
+        candidate = candidate.split("\n", 1)[1].rsplit("```", 1)[0].strip()
+    parsed = json.loads(candidate)
     if set(parsed) != {"status", "method", "observable_findings", "hard_failures", "rationale"}:
         raise ValueError("assessor output keys are not exact")
     evidence = {"image_sha256": hashlib.sha256(image_bytes).hexdigest(), "assessment": parsed}
