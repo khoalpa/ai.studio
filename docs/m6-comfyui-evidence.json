@@ -6,7 +6,7 @@
   "endpoint": "http://127.0.0.1:8188",
   "workflow_path": "D:\\project\\ai.studio\\comfy_workflows\\sdxl_txt2img_api.json",
   "workflow_sha256": "3cbc96f829464b7a40a03b31f4f9a673efb6a5c04dce42a66e572dc351bd28fe",
-  "model_path": "D:\\Documents\\ComfyUI\\models\\checkpoints\\sd_xl_base_1.0.safetensors",
+  "model_path": "D:\\Comfy-Desktop\\ComfyUI-Shared\\models\\checkpoints\\sd_xl_base_1.0.safetensors",
   "model_sha256": "31e35c80fc4829d14f90153f4c74cd59c90b779f6afe05a74cd6120b893f7e5b",
   "model_license": "USER_ATTESTED: checkpoint license/provenance confirmed by project owner",
   "custom_nodes": [],

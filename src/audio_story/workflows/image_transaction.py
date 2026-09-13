@@ -14,6 +14,15 @@ from audio_story.adapters.image.base import (
     LocalImageAdapter,
 )
 from audio_story.adapters.image.resource import ImageResourceError, gpu_job
+from audio_story.adapters.ocr import (
+    LocalOcrAdapter,
+    OcrAdapterError,
+    OcrEvidence,
+    OcrRequest,
+    inspect_ocr,
+    normalize_ocr_text,
+    residual_text_detected,
+)
 from audio_story.domain.state import CallStatus, DetectorClass, GateStatus
 from audio_story.validation.canonical import sha256_bytes
 from audio_story.validation.images import PngInfo, validate_image_qa
@@ -35,6 +44,14 @@ class ProductionTypographyJob:
 
 
 @dataclass(frozen=True, slots=True)
+class ProductionOcrJob:
+    adapter: LocalOcrAdapter
+    languages: tuple[str, ...]
+    expected_text: str
+    minimum_confidence: float = 0.8
+
+
+@dataclass(frozen=True, slots=True)
 class ImageTransactionResult:
     status: str
     transaction_id: str
@@ -43,6 +60,8 @@ class ImageTransactionResult:
     digest: str | None
     qa: PngInfo | None = None
     typography: ProductionTypographyEvidence | None = None
+    base_ocr: OcrEvidence | None = None
+    final_ocr: OcrEvidence | None = None
 
 
 def generate_single_image(
@@ -56,6 +75,7 @@ def generate_single_image(
     cancellation: Event | None = None,
     max_attempts: int = 2,
     typography: ProductionTypographyJob | None = None,
+    ocr: ProductionOcrJob | None = None,
 ) -> ImageTransactionResult:
     """Generate exactly one PNG, validate it, and commit only a PASS candidate."""
     cancellation = cancellation if cancellation is not None else Event()
@@ -86,6 +106,14 @@ def generate_single_image(
             )
             artifact_bytes = response.content
             typography_evidence = None
+            base_ocr = None
+            final_ocr = None
+            if ocr is not None:
+                base_ocr = _inspect_full_image(
+                    ocr, response.content, base_info.width, base_info.height, cancellation, 0.0
+                )
+                if residual_text_detected(base_ocr, minimum_confidence=ocr.minimum_confidence):
+                    raise OcrAdapterError("OCR019_RESIDUAL_TEXT", "base image contains text")
             if typography is not None:
                 typography_evidence = render_verified_production_cover(
                     response.content,
@@ -103,6 +131,17 @@ def generate_single_image(
                     active_request.requested_height,
                 ),
             )
+            if ocr is not None:
+                final_ocr = _inspect_full_image(
+                    ocr,
+                    artifact_bytes,
+                    info.width,
+                    info.height,
+                    cancellation,
+                    ocr.minimum_confidence,
+                )
+                if final_ocr.normalized_text != normalize_ocr_text(ocr.expected_text):
+                    raise OcrAdapterError("OCR020_TEXT_MISMATCH", "final OCR text does not match")
             validate_image_package(
                 (
                     ImageManifestEntry(
@@ -161,6 +200,25 @@ def generate_single_image(
                     typography_evidence.renderer_version,
                     typography_evidence.font_sha256,
                 )
+            if base_ocr is not None and final_ocr is not None:
+                kernel.record_gate(
+                    stage_id,
+                    artifact_id,
+                    "OCR_GATE",
+                    DetectorClass.DETERMINISTIC,
+                    GateStatus.PASS,
+                    {
+                        "base_evidence_digest": base_ocr.evidence_digest,
+                        "base_image_sha256": base_info.sha256,
+                        "final_evidence_digest": final_ocr.evidence_digest,
+                        "final_image_sha256": info.sha256,
+                        "final_text_sha256": final_ocr.normalized_result_digest,
+                    },
+                    active_request.prompt_digest,
+                    active_request.workflow_digest,
+                    final_ocr.adapter_version or final_ocr.engine_identity,
+                    final_ocr.evidence_digest,
+                )
             kernel.finish_generation_call(
                 call_id,
                 CallStatus.FINISHED,
@@ -180,13 +238,22 @@ def generate_single_image(
                 info.sha256,
                 info,
                 typography_evidence,
+                base_ocr,
+                final_ocr,
             )
-        except (ImageAdapterError, ImageResourceError, TypographyError, ValueError, OSError) as exc:
+        except (
+            ImageAdapterError,
+            ImageResourceError,
+            OcrAdapterError,
+            TypographyError,
+            ValueError,
+            OSError,
+        ) as exc:
             error = (
                 exc
                 if isinstance(exc, ImageAdapterError)
                 else ImageAdapterError(exc.code, str(exc))
-                if isinstance(exc, TypographyError)
+                if isinstance(exc, (OcrAdapterError, TypographyError))
                 else ImageAdapterError(
                     "IMG012_OOM" if isinstance(exc, ImageResourceError) else "IMG010_QA_FAILURE",
                     str(exc),
@@ -202,6 +269,30 @@ def generate_single_image(
                 break
     return ImageTransactionResult(
         DeliveryStatus.VISUAL_GATE_FAIL, transaction_id, last_call_id, None, None
+    )
+
+
+def _inspect_full_image(
+    job: ProductionOcrJob,
+    image_bytes: bytes,
+    width: int,
+    height: int,
+    cancellation: Event,
+    minimum_confidence: float,
+) -> OcrEvidence:
+    request = OcrRequest(
+        sha256_bytes(image_bytes),
+        (0, 0, width, height),
+        (width, height),
+        "cover.png",
+        job.languages,
+    )
+    return inspect_ocr(
+        job.adapter,
+        request,
+        image_bytes,
+        minimum_confidence=minimum_confidence,
+        cancellation=cancellation,
     )
 
 

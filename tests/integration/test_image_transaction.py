@@ -10,13 +10,39 @@ from audio_story.adapters.image import (
     ImageRequest,
     ImageResourceError,
 )
+from audio_story.adapters.ocr import LocalOcrAdapter, OcrEvidence, OcrRequest
 from audio_story.domain.state import CallStatus, WorkflowStatus
 from audio_story.workflows import WorkflowKernel
-from audio_story.workflows.image_transaction import ProductionTypographyJob, generate_single_image
+from audio_story.workflows.image_transaction import (
+    ProductionOcrJob,
+    ProductionTypographyJob,
+    generate_single_image,
+)
 from audio_story.workflows.typography_production import ProductionTypographyConfig
 
 FONT = Path(r"C:\Windows\Fonts\DejaVuSans.ttf")
 FONT_SHA256 = "7da195a74c55bef988d0d48f9508bd5d849425c1770dba5d7bfc6ce9ed848954"
+
+
+class _TwoPhaseOcr(LocalOcrAdapter):
+    def __init__(self, final_text: str = "Chuyện kể") -> None:
+        self.calls = 0
+        self.final_text = final_text
+
+    def inspect(
+        self, request: OcrRequest, image_bytes: bytes, cancellation: Event | None = None
+    ) -> OcrEvidence:
+        self.calls += 1
+        text = "" if self.calls == 1 else self.final_text
+        return OcrEvidence(
+            text,
+            0.9,
+            (0, 0, 1, 1),
+            "test-ocr",
+            str(self.calls) * 64,
+            normalized_result_digest=__import__("hashlib").sha256(text.encode()).hexdigest(),
+            page_identity=request.page_identity,
+        )
 
 
 def test_single_image_transaction_commits_only_after_png_qa(tmp_path: Path) -> None:
@@ -128,6 +154,46 @@ def test_typography_failure_cannot_bind_or_advance_transaction(tmp_path: Path) -
         kernel.db.connection.execute("SELECT failure_code FROM generation_calls").fetchone()[0]
         == "TYPO001_TEXT_LAYOUT"
     )
+    kernel.close()
+
+
+@pytest.mark.skipif(not FONT.is_file(), reason="pinned production font is unavailable")
+def test_two_phase_ocr_is_required_before_typography_commit(tmp_path: Path) -> None:
+    kernel = WorkflowKernel(tmp_path / "runtime")
+    workflow = kernel.create_workflow("ADULT_STANDARD", "STAGE2", "CREATE", "a" * 64, "b" * 64)
+    kernel.transition_workflow(workflow, WorkflowStatus.RUNNING)
+    stage = kernel.start_stage(workflow, "STAGE2", "c" * 64)
+    ocr = _TwoPhaseOcr()
+    result = generate_single_image(
+        kernel,
+        stage,
+        ImageRequest(
+            "cover.png", "d" * 64, "e" * 64, "mock", 4, 1, 256, 256, "PNG", 1, "tx", "call"
+        ),
+        DeterministicMockImageAdapter(),
+        owner_stage="STAGE2",
+        artifact_role="LANDSCAPE",
+        typography=ProductionTypographyJob(
+            "Chuyện kể",
+            tmp_path / "cover.png",
+            ProductionTypographyConfig(
+                FONT, FONT_SHA256, "DejaVu Sans OS-installed", "PROJECT_OWNER_CONFIRMED", 20, 24
+            ),
+        ),
+        ocr=ProductionOcrJob(ocr, ("vie",), "Chuyện kể", 0.8),
+    )
+
+    failure = kernel.db.connection.execute(
+        "SELECT failure_code FROM generation_calls WHERE id=?", (result.generation_call_id,)
+    ).fetchone()[0]
+    assert result.status == "AUTHORITATIVE", failure
+    assert ocr.calls == 2 and result.base_ocr is not None and result.final_ocr is not None
+    assert {
+        row[0]
+        for row in kernel.db.connection.execute(
+            "SELECT gate_id FROM gate_results WHERE artifact_id=?", (result.artifact_id,)
+        )
+    } == {"IMAGE_QA_GATE", "TYPOGRAPHY_GATE", "OCR_GATE"}
     kernel.close()
 
 

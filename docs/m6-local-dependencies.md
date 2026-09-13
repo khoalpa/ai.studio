@@ -89,5 +89,6 @@ workflow or custom node may be downloaded by the test.
 
 Record the exact command, result and status (`PASS`, `SKIP`, or
 `NOT_VERIFIED`) for each item. The default suite must remain offline and GPU
-free. M6 remains open until the combined production transaction is evidenced
-and reviewed; M7 is out of scope and `PCF001` remains unresolved.
+free. The combined M6-B transaction is PASS with exact evidence in
+`docs/status/M6-B-PRODUCTION-SMOKE.md`. M7 is out of scope and `PCF001` remains
+unresolved for the broader plan.

@@ -6,10 +6,12 @@ import base64
 import contextlib
 import hashlib
 import json
+import struct
 import time
 import urllib.error
 import urllib.parse
 import urllib.request
+import zlib
 from dataclasses import dataclass
 from pathlib import Path
 from threading import Event
@@ -253,7 +255,7 @@ class ComfyUIImageAdapter(LocalImageAdapter):
             if not content:
                 raise ImageAdapterError("IMG009_EMPTY_OUTPUT", "ComfyUI returned empty image")
             return ImageResponse(
-                content,
+                _bind_png_provenance(content, request, self.config.adapter_version),
                 request.model_identity,
                 self.config.adapter_version,
                 int((time.monotonic() - started) * 1000),
@@ -261,3 +263,27 @@ class ComfyUIImageAdapter(LocalImageAdapter):
                 request.seed,
             )
         raise ImageAdapterError("IMG008_TIMEOUT_OR_BACKEND", "ComfyUI generation timed out")
+
+
+def _bind_png_provenance(data: bytes, request: ImageRequest, adapter_version: str) -> bytes:
+    """Add deterministic runtime provenance without decoding or changing pixels."""
+    signature = b"\x89PNG\r\n\x1a\n"
+    ihdr_end = len(signature) + 25
+    if len(data) < ihdr_end or not data.startswith(signature) or data[12:16] != b"IHDR":
+        return data
+    payload = json.dumps(
+        {
+            "adapter_version": adapter_version,
+            "model_identity": request.model_identity,
+            "prompt_digest": request.prompt_digest,
+            "seed": request.seed,
+            "workflow_digest": request.workflow_digest,
+        },
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode()
+    kind = b"tEXt"
+    body = b"audio_story\0" + payload
+    chunk = struct.pack(">I", len(body)) + kind + body
+    chunk += struct.pack(">I", zlib.crc32(kind + body) & 0xFFFFFFFF)
+    return data[:ihdr_end] + chunk + data[ihdr_end:]
