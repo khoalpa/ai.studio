@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from contextlib import suppress
 from dataclasses import dataclass, replace
+from pathlib import Path
 from threading import Event
 
 from audio_story.adapters.image.base import (
@@ -18,6 +19,19 @@ from audio_story.validation.canonical import sha256_bytes
 from audio_story.validation.images import PngInfo, validate_image_qa
 from audio_story.workflows.kernel import WorkflowKernel
 from audio_story.workflows.package_quarantine import ImageManifestEntry, validate_image_package
+from audio_story.workflows.typography import TypographyError
+from audio_story.workflows.typography_production import (
+    ProductionTypographyConfig,
+    ProductionTypographyEvidence,
+    render_verified_production_cover,
+)
+
+
+@dataclass(frozen=True, slots=True)
+class ProductionTypographyJob:
+    text: str
+    output_path: Path
+    config: ProductionTypographyConfig
 
 
 @dataclass(frozen=True, slots=True)
@@ -28,6 +42,7 @@ class ImageTransactionResult:
     artifact_id: str | None
     digest: str | None
     qa: PngInfo | None = None
+    typography: ProductionTypographyEvidence | None = None
 
 
 def generate_single_image(
@@ -40,6 +55,7 @@ def generate_single_image(
     artifact_role: str,
     cancellation: Event | None = None,
     max_attempts: int = 2,
+    typography: ProductionTypographyJob | None = None,
 ) -> ImageTransactionResult:
     """Generate exactly one PNG, validate it, and commit only a PASS candidate."""
     cancellation = cancellation if cancellation is not None else Event()
@@ -60,8 +76,27 @@ def generate_single_image(
             with gpu_job():
                 response = adapter.generate_image(active_request, cancellation)
             _raise_if_cancelled(cancellation, adapter, call_id)
-            info = validate_image_qa(
+            base_info = validate_image_qa(
                 response.content,
+                active_request.basename,
+                expected_dimensions=(
+                    active_request.requested_width,
+                    active_request.requested_height,
+                ),
+            )
+            artifact_bytes = response.content
+            typography_evidence = None
+            if typography is not None:
+                typography_evidence = render_verified_production_cover(
+                    response.content,
+                    base_info.sha256,
+                    typography.text,
+                    typography.output_path,
+                    typography.config,
+                )
+                artifact_bytes = typography.output_path.read_bytes()
+            info = validate_image_qa(
+                artifact_bytes,
                 active_request.basename,
                 expected_dimensions=(
                     active_request.requested_width,
@@ -75,7 +110,7 @@ def generate_single_image(
                         owner_stage=owner_stage,
                         character_id="",
                         digest=info.sha256,
-                        size=len(response.content),
+                        size=len(artifact_bytes),
                         status=DeliveryStatus.AUTHORITATIVE,
                         relative_path=f"images/{active_request.basename}",
                         transaction_id=transaction_id,
@@ -87,7 +122,7 @@ def generate_single_image(
             )
             artifact_id = kernel.register_candidate(
                 call_id,
-                response.content,
+                artifact_bytes,
                 "image/png",
                 owner_stage,
                 artifact_role=artifact_role,
@@ -105,6 +140,27 @@ def generate_single_image(
                 response.adapter_version,
                 active_request.workflow_digest,
             )
+            if typography_evidence is not None:
+                kernel.record_gate(
+                    stage_id,
+                    artifact_id,
+                    "TYPOGRAPHY_GATE",
+                    DetectorClass.DETERMINISTIC,
+                    GateStatus.PASS,
+                    {
+                        "base_sha256": typography_evidence.base_sha256,
+                        "font_sha256": typography_evidence.font_sha256,
+                        "text_sha256": typography_evidence.text_sha256,
+                        "final_sha256": typography_evidence.final_sha256,
+                        "width": typography_evidence.width,
+                        "height": typography_evidence.height,
+                        "renderer_version": typography_evidence.renderer_version,
+                    },
+                    active_request.prompt_digest,
+                    active_request.workflow_digest,
+                    typography_evidence.renderer_version,
+                    typography_evidence.font_sha256,
+                )
             kernel.finish_generation_call(
                 call_id,
                 CallStatus.FINISHED,
@@ -123,11 +179,14 @@ def generate_single_image(
                 artifact_id,
                 info.sha256,
                 info,
+                typography_evidence,
             )
-        except (ImageAdapterError, ImageResourceError, ValueError, OSError) as exc:
+        except (ImageAdapterError, ImageResourceError, TypographyError, ValueError, OSError) as exc:
             error = (
                 exc
                 if isinstance(exc, ImageAdapterError)
+                else ImageAdapterError(exc.code, str(exc))
+                if isinstance(exc, TypographyError)
                 else ImageAdapterError(
                     "IMG012_OOM" if isinstance(exc, ImageResourceError) else "IMG010_QA_FAILURE",
                     str(exc),

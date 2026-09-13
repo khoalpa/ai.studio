@@ -30,64 +30,64 @@ remain `NOT_VERIFIED` and must be reported as such.
 
 ### ComfyUI loopback
 
-- [ ] ComfyUI version and local install path recorded.
-- [ ] Server binds only to `127.0.0.1` on an explicit configured port.
-- [ ] Workflow JSON, model/checkpoint and custom-node versions are present
+- [x] ComfyUI version and local install path recorded.
+- [x] Server binds only to `127.0.0.1` on an explicit configured port.
+- [x] Workflow JSON, model/checkpoint and custom-node versions are present
       locally; record SHA-256 digests.
-- [ ] Health and capability/model probes pass.
-- [ ] Workflow digest, request digest, seed, canvas and single-output
+- [x] Health and capability/model probes pass.
+- [x] Workflow digest, request digest, seed, canvas and single-output
       cardinality are captured.
-- [ ] Timeout, cancellation, redirect rejection, malformed/truncated/empty/
+- [x] Timeout, cancellation, redirect rejection, malformed/truncated/empty/
       fan-out output, crash/non-zero exit, semaphore and unload tests pass.
-- [ ] Output is reopened and its exact PNG digest is recorded.
+- [x] Output is reopened and its exact PNG digest is recorded.
 
 Evidence must be produced by an explicitly marked smoke test. No model,
 workflow or custom node may be downloaded by the test.
 
 ## Local OCR
 
-- [ ] Engine and model are installed locally with pinned versions and digests.
-- [ ] Adapter records image digest, engine/model identity, adapter version,
+- [x] Engine and model are installed locally with pinned versions and digests.
+- [x] Adapter records image digest, engine/model identity, adapter version,
       region, NFC-normalized text, confidence, bounding box/locator, evidence
       digest, timing and termination reason.
-- [ ] Tests cover correct/incorrect text, Vietnamese diacritics,
+- [x] Tests cover correct/incorrect text, Vietnamese diacritics,
       normalization, low confidence, out-of-bounds boxes, zero-text residuals,
       timeout, cancellation, crash and image-digest mismatch.
-- [ ] OCR never mutates authoritative pixels or bypasses PNG QA gates.
+- [x] OCR never mutates authoritative pixels or bypasses PNG QA gates.
 
 ## Typography and cover renderer
 
-- [ ] Deterministic renderer and pinned font identity are available locally.
-- [ ] Zero-text base gate passes before rendering.
-- [ ] Text, language, episode label, layout and safe-margin gates pass.
-- [ ] Final PNG is reopened and dimensions, alpha, luma, OCR, metadata and
+- [x] Deterministic renderer and pinned font identity are available locally.
+- [x] Zero-text base gate passes before rendering.
+- [x] Text, language, episode label, layout and safe-margin gates pass.
+- [x] Final PNG is reopened and dimensions, alpha, luma, OCR, metadata and
       digest gates are rerun.
-- [ ] Provenance binds base digest, renderer/font identity, text input and
+- [x] Provenance binds base digest, renderer/font identity, text input and
       final digest.
-- [ ] Same input/seed/configuration produces identical bytes.
+- [x] Same input/seed/configuration produces identical bytes.
 
 ## Recovery and fault evidence
 
-- [ ] Fresh-process evidence exists for all 17 M6 boundaries.
-- [ ] Every case reconciles SQLite and filesystem, is idempotent on the second
+- [x] Fresh-process evidence exists for all 17 M6 boundaries.
+- [x] Every case reconciles SQLite and filesystem, is idempotent on the second
       recovery, preserves RK018/RK019, and rejects stale candidates.
-- [ ] Fault injection covers OOM, unload, cancellation, OCR, typography,
+- [x] Fault injection covers OOM, unload, cancellation, OCR, typography,
       policy, metadata/PNG/manifest/package writes, SQLite binding,
       publication, disk quota and unexpected adapter/store failures.
 
 ## Package quarantine and cross-file packaging
 
-- [ ] Fan-out, contact-sheet, canvas/orientation, duplicate-basename,
+- [x] Fan-out, contact-sheet, canvas/orientation, duplicate-basename,
       missing/extra output and path/owner/source checks are covered.
-- [ ] Digest, byte-size, manifest, stale-evidence and relationship checks are
+- [x] Digest, byte-size, manifest, stale-evidence and relationship checks are
       enforced across story/character/image files.
-- [ ] Reopen, safe extraction and archive-security corpus pass.
-- [ ] Quarantined candidates cannot bind, publish, overwrite or advance
+- [x] Reopen, safe extraction and archive-security corpus pass.
+- [x] Quarantined candidates cannot bind, publish, overwrite or advance
       progress.
 
 ## Release evidence
 
 Record the exact command, result and status (`PASS`, `SKIP`, or
 `NOT_VERIFIED`) for each item. The default suite must remain offline and GPU
-free. M6 remains uncommitted until all required production evidence is
-reviewed; M7 is out of scope and `PCF001` remains unresolved.
+free. M6 remains open until the combined production transaction is evidenced
+and reviewed; M7 is out of scope and `PCF001` remains unresolved.

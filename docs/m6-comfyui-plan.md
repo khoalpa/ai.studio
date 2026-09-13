@@ -63,5 +63,6 @@ download or install anything.
 - The smoke evidence and deterministic test results are recorded in
   `docs/status/M6-B-COMFYUI.md`.
 
-Current status: `BLOCKED` pending explicit local ComfyUI installation,
-workflow/model/custom-node provenance and a reviewed digest-bound fixture.
+Current status: `PASS`. The reviewed production evidence, exact dependency
+digests, live generation/cancellation results and deterministic fault matrix
+are recorded in `docs/status/M6-B-COMFYUI.md`.

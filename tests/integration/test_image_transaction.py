@@ -12,7 +12,11 @@ from audio_story.adapters.image import (
 )
 from audio_story.domain.state import CallStatus, WorkflowStatus
 from audio_story.workflows import WorkflowKernel
-from audio_story.workflows.image_transaction import generate_single_image
+from audio_story.workflows.image_transaction import ProductionTypographyJob, generate_single_image
+from audio_story.workflows.typography_production import ProductionTypographyConfig
+
+FONT = Path(r"C:\Windows\Fonts\DejaVuSans.ttf")
+FONT_SHA256 = "7da195a74c55bef988d0d48f9508bd5d849425c1770dba5d7bfc6ce9ed848954"
 
 
 def test_single_image_transaction_commits_only_after_png_qa(tmp_path: Path) -> None:
@@ -35,6 +39,95 @@ def test_single_image_transaction_commits_only_after_png_qa(tmp_path: Path) -> N
     assert result.artifact_id is not None
     assert kernel.progress(stage) == (1, 1)
     assert kernel.db.connection.execute("SELECT COUNT(*) FROM artifact_bindings").fetchone()[0] == 1
+    kernel.close()
+
+
+@pytest.mark.skipif(not FONT.is_file(), reason="pinned production font is unavailable")
+def test_single_image_transaction_commits_verified_typography_artifact(tmp_path: Path) -> None:
+    kernel = WorkflowKernel(tmp_path / "runtime")
+    workflow = kernel.create_workflow("ADULT_STANDARD", "STAGE2", "CREATE", "a" * 64, "b" * 64)
+    kernel.transition_workflow(workflow, WorkflowStatus.RUNNING)
+    stage = kernel.start_stage(workflow, "STAGE2", "c" * 64)
+    output = tmp_path / "work" / "cover.png"
+    result = generate_single_image(
+        kernel,
+        stage,
+        ImageRequest(
+            "landscape_0001.png", "d" * 64, "e" * 64, "mock", 4, 1, 256, 256, "PNG", 1, "tx", "call"
+        ),
+        DeterministicMockImageAdapter(),
+        owner_stage="STAGE2",
+        artifact_role="LANDSCAPE",
+        typography=ProductionTypographyJob(
+            "Chuyện kể",
+            output,
+            ProductionTypographyConfig(
+                FONT,
+                FONT_SHA256,
+                "DejaVu Sans OS-installed",
+                "PROJECT_OWNER_CONFIRMED",
+                20,
+                24,
+            ),
+        ),
+    )
+
+    assert result.status == "AUTHORITATIVE"
+    assert result.typography is not None
+    assert result.digest == result.typography.final_sha256
+    assert output.read_bytes() == kernel.store.read(
+        kernel.db.connection.execute(
+            "SELECT relative_path FROM artifacts WHERE id=?", (result.artifact_id,)
+        ).fetchone()[0]
+    )
+    assert {
+        row[0]
+        for row in kernel.db.connection.execute(
+            "SELECT gate_id FROM gate_results WHERE artifact_id=? AND is_current=1",
+            (result.artifact_id,),
+        )
+    } == {"IMAGE_QA_GATE", "TYPOGRAPHY_GATE"}
+    assert kernel.progress(stage) == (1, 1)
+    kernel.close()
+
+
+@pytest.mark.skipif(not FONT.is_file(), reason="pinned production font is unavailable")
+def test_typography_failure_cannot_bind_or_advance_transaction(tmp_path: Path) -> None:
+    kernel = WorkflowKernel(tmp_path / "runtime")
+    workflow = kernel.create_workflow("ADULT_STANDARD", "STAGE2", "CREATE", "a" * 64, "b" * 64)
+    kernel.transition_workflow(workflow, WorkflowStatus.RUNNING)
+    stage = kernel.start_stage(workflow, "STAGE2", "c" * 64)
+    result = generate_single_image(
+        kernel,
+        stage,
+        ImageRequest(
+            "landscape_0001.png", "d" * 64, "e" * 64, "mock", 4, 1, 128, 128, "PNG", 1, "tx", "call"
+        ),
+        DeterministicMockImageAdapter(),
+        owner_stage="STAGE2",
+        artifact_role="LANDSCAPE",
+        max_attempts=1,
+        typography=ProductionTypographyJob(
+            "A title that cannot fit inside this deliberately tiny image",
+            tmp_path / "work" / "cover.png",
+            ProductionTypographyConfig(
+                FONT,
+                FONT_SHA256,
+                "DejaVu Sans OS-installed",
+                "PROJECT_OWNER_CONFIRMED",
+                64,
+                48,
+            ),
+        ),
+    )
+
+    assert result.status == "VISUAL_GATE_FAIL"
+    assert kernel.progress(stage) == (0, 1)
+    assert kernel.db.connection.execute("SELECT COUNT(*) FROM artifact_bindings").fetchone()[0] == 0
+    assert (
+        kernel.db.connection.execute("SELECT failure_code FROM generation_calls").fetchone()[0]
+        == "TYPO001_TEXT_LAYOUT"
+    )
     kernel.close()
 
 
