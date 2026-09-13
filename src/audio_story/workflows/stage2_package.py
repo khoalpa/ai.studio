@@ -8,7 +8,12 @@ from collections import OrderedDict
 from pathlib import Path
 from typing import Any
 
-from audio_story.domain.stage2 import Stage1PackageInput, Stage2Error, Stage2ZonePlan, ZONE_IMAGE_BASENAMES
+from audio_story.domain.stage2 import (
+    Stage1PackageInput,
+    Stage2Error,
+    Stage2ZonePlan,
+    ZONE_IMAGE_BASENAMES,
+)
 from audio_story.validation.archives import inspect_zip, safe_extract
 from audio_story.validation.canonical import canonical_json_bytes, sha256_bytes
 from audio_story.validation.stage1 import ordered_json_bytes
@@ -28,7 +33,9 @@ def build_stage2_checkpoint(
     """Publish a self-contained Stage 2 checkpoint only after all gates pass."""
     require_stage2_gate_pass(gate_result)
     if gate_result.semantic_pass_count != len(ZONE_IMAGE_BASENAMES):
-        raise Stage2Error("M7D001_GATE", "all landscape semantic gates are required", "STAGE2_PACKAGE_GATE")
+        raise Stage2Error(
+            "M7D001_GATE", "all landscape semantic gates are required", "STAGE2_PACKAGE_GATE"
+        )
     rows = kernel.db.connection.execute(
         "SELECT t.basename,t.id transaction_id,b.artifact_id,a.sha256,a.relative_path "
         "FROM asset_transactions t JOIN artifact_bindings b ON b.transaction_id=t.id AND b.role='COMMITTED' "
@@ -74,9 +81,48 @@ def _write_zip(path: Path, manifest: bytes, members: OrderedDict[str, bytes]) ->
 
 
 def _build_manifest(source: Stage1PackageInput, members: OrderedDict[str, bytes]) -> bytes:
-    files = [OrderedDict(path=path, sha256=sha256_bytes(data), size_bytes=len(data), owner_stage=("STAGE2" if path.startswith(("landscape/", "visual_")) else "STAGE1"), mutation_status=("CREATED_CURRENT_STAGE" if path.startswith(("landscape/", "visual_")) else "READ_ONLY")) for path, data in members.items()]
-    projection = [{key: item[key] for key in ("path", "sha256", "size_bytes", "owner_stage")} for item in files]
-    manifest = OrderedDict(schema_version="1.0", package_stage="STAGE2", package_purpose="WORKFLOW_CHECKPOINT", operation_mode="CREATE", created_by_prompt_version="3.16.13", active_profile=source.manifest["active_profile"], story_sha256=sha256_bytes(source.story_bytes), parent_package_digest_sha256=source.package_digest_sha256, allowed_next_stage="STAGE3", file_count=1 + len(files), files=files, validation=OrderedDict(manifest_schema_status="PASS", archive_security_status="PASS", file_set_status="PASS", file_digest_status="PASS", stage_ownership_status="PASS", parent_binding_status="PASS", stage_gate_status="PASS", status="PASS"), package_digest_sha256=sha256_bytes(canonical_json_bytes(projection)))
+    files = [
+        OrderedDict(
+            path=path,
+            sha256=sha256_bytes(data),
+            size_bytes=len(data),
+            owner_stage=("STAGE2" if path.startswith(("landscape/", "visual_")) else "STAGE1"),
+            mutation_status=(
+                "CREATED_CURRENT_STAGE"
+                if path.startswith(("landscape/", "visual_"))
+                else "READ_ONLY"
+            ),
+        )
+        for path, data in members.items()
+    ]
+    projection = [
+        {key: item[key] for key in ("path", "sha256", "size_bytes", "owner_stage")}
+        for item in files
+    ]
+    manifest = OrderedDict(
+        schema_version="1.0",
+        package_stage="STAGE2",
+        package_purpose="WORKFLOW_CHECKPOINT",
+        operation_mode="CREATE",
+        created_by_prompt_version="3.16.13",
+        active_profile=source.manifest["active_profile"],
+        story_sha256=sha256_bytes(source.story_bytes),
+        parent_package_digest_sha256=source.package_digest_sha256,
+        allowed_next_stage="STAGE3",
+        file_count=1 + len(files),
+        files=files,
+        validation=OrderedDict(
+            manifest_schema_status="PASS",
+            archive_security_status="PASS",
+            file_set_status="PASS",
+            file_digest_status="PASS",
+            stage_ownership_status="PASS",
+            parent_binding_status="PASS",
+            stage_gate_status="PASS",
+            status="PASS",
+        ),
+        package_digest_sha256=sha256_bytes(canonical_json_bytes(projection)),
+    )
     return ordered_json_bytes(manifest)
 
 
@@ -86,6 +132,7 @@ def _reopen_checkpoint(path: Path, manifest: bytes, members: OrderedDict[str, by
     if actual != expected:
         raise Stage2Error("M7D004_REOPEN", "archive order or file set mismatch", "story.zip")
     import tempfile
+
     with tempfile.TemporaryDirectory(prefix="audio-story-m7d-") as temp:
         root = safe_extract(path, Path(temp))
         for name, data in [("workflow_manifest.json", manifest), *members.items()]:
@@ -93,4 +140,6 @@ def _reopen_checkpoint(path: Path, manifest: bytes, members: OrderedDict[str, by
                 raise Stage2Error("M7D005_REOPEN", "archive bytes mismatch", name)
     parsed: Any = json.loads(manifest)
     if parsed["package_stage"] != "STAGE2" or parsed["parent_package_digest_sha256"] is None:
-        raise Stage2Error("M7D006_MANIFEST", "invalid Stage 2 parent binding", "workflow_manifest.json")
+        raise Stage2Error(
+            "M7D006_MANIFEST", "invalid Stage 2 parent binding", "workflow_manifest.json"
+        )
