@@ -161,6 +161,13 @@ def normalize_ocr_text(text: str) -> str:
     return unicodedata.normalize("NFC", " ".join(text.split()))
 
 
+def residual_text_detected(evidence: OcrEvidence, *, minimum_confidence: float = 0.8) -> bool:
+    """Apply the deterministic zero-text policy without mutating raw OCR evidence."""
+    if not 0.0 <= minimum_confidence <= 1.0:
+        raise OcrAdapterError("OCR001_CONFIDENCE_POLICY", "confidence policy is invalid")
+    return bool(evidence.normalized_text) and evidence.confidence >= minimum_confidence
+
+
 def _is_digest(value: str) -> bool:
     return len(value) == 64 and all(character in "0123456789abcdef" for character in value)
 

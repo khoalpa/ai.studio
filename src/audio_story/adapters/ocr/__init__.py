@@ -8,6 +8,7 @@ from audio_story.adapters.ocr.base import (
     compute_evidence_digest,
     inspect_ocr,
     normalize_ocr_text,
+    residual_text_detected,
     validate_ocr_evidence,
 )
 from audio_story.adapters.ocr.mock import DeterministicMockOcr
@@ -24,5 +25,6 @@ __all__ = [
     "TesseractOcrAdapter",
     "inspect_ocr",
     "normalize_ocr_text",
+    "residual_text_detected",
     "validate_ocr_evidence",
 ]

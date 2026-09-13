@@ -25,6 +25,7 @@ from audio_story.adapters.ocr import (
     OcrRequest,
     inspect_ocr,
     normalize_ocr_text,
+    residual_text_detected,
     validate_ocr_evidence,
 )
 from audio_story.config import ConfigurationError
@@ -252,6 +253,17 @@ def test_ocr_confidence_box_digest_and_stale_input_fail_closed() -> None:
     for evidence, content, minimum, code in cases:
         with pytest.raises(OcrAdapterError, match=code):
             validate_ocr_evidence(request_value, evidence, content, minimum_confidence=minimum)
+
+
+def test_zero_text_policy_ignores_only_low_confidence_false_positives() -> None:
+    low = OcrEvidence("texture noise", 0.306593564, (0, 0, 10, 10), "tesseract", "a" * 64)
+    high = OcrEvidence("real text", 0.9, (0, 0, 10, 10), "tesseract", "a" * 64)
+    empty = OcrEvidence("", 1.0, (0, 0, 10, 10), "tesseract", "a" * 64)
+    assert residual_text_detected(low, minimum_confidence=0.8) is False
+    assert residual_text_detected(high, minimum_confidence=0.8) is True
+    assert residual_text_detected(empty, minimum_confidence=0.8) is False
+    with pytest.raises(OcrAdapterError, match="OCR001_CONFIDENCE_POLICY"):
+        residual_text_detected(low, minimum_confidence=1.1)
 
 
 @pytest.mark.parametrize(

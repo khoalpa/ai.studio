@@ -40,5 +40,28 @@ Toolchain: bundled Python 3.12.14, Ruff 0.16.7, mypy 2.3.1 strict and pytest 9.1
 - `docs/tesseract-adapter.md`
 - `docs/status/M6-B-OCR.md`
 
-The OCR checkpoint is committed. ComfyUI stays `BLOCKED`; production typography/font remains
-`MISSING` / `NOT_VERIFIED`; complete M6 production is not declared done and M7 remains out of scope.
+The OCR checkpoint is committed. ComfyUI production validation now passes in
+its separate checkpoint; production typography/font remains `MISSING` /
+`NOT_VERIFIED`. Complete M6 production is not declared done and M7 remains out
+of scope.
+
+## Production zero-text smoke
+
+The ComfyUI production PNG was inspected with pinned local Tesseract
+`v5.5.0.20241111`, executable SHA-256
+`ccd044d6cf16eaaad151260e1fcc5e3e1504cd1b8644e940b4f7ae3e315dd0d3`,
+and pinned `eng`/`osd` traineddata. Process execution and digest binding PASS,
+but the zero-text gate FAILS: Tesseract returned low-confidence false-positive
+text at confidence `0.306593564`. Request digest is
+`f8a1120e6220650a8c79b65abed782b4d128881bad9d8144ac6b001a5bea9361` and
+result digest is
+`d03d6906fdab466fe63627cd6ff3cad733f848b7da02a753ecdb63f4fdd03085`.
+No production OCR PASS is claimed.
+
+The deterministic residual-text policy now uses an explicit minimum confidence
+of `0.8` without mutating raw OCR evidence. Re-running the same digest-bound
+production fixture preserved the raw confidence `0.306593564` and classified
+the low-confidence texture reading as no residual text; the zero-text gate is
+therefore PASS. Regression tests cover low-confidence false positives,
+high-confidence text, empty text and invalid thresholds. Full suite: 291 passed,
+2 optional skips; branch coverage 92.85%; Ruff and mypy PASS.
