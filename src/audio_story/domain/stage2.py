@@ -19,6 +19,34 @@ ZONE_IMAGE_BASENAMES = (
     "farewell.png",
     "outro.png",
 )
+ZONE_EXECUTION_QUEUE = ZONE_IMAGE_BASENAMES
+
+
+@dataclass(frozen=True, slots=True)
+class Stage2ZonePlan:
+    """Frozen Stage 2 planning artifacts and execution order."""
+
+    visual_plan_bytes: bytes
+    visual_bible_bytes: bytes
+    packaging_basenames: tuple[str, ...]
+    execution_queue: tuple[str, ...]
+    identity_pilot_basename: str
+    calibration_basename: str
+
+
+@dataclass(frozen=True, slots=True)
+class Stage2Invocation:
+    """Exact pre-call arguments checked independently of an image adapter."""
+
+    stage: str
+    orientation: str
+    target_basename: str
+    generator_call_intent: str
+    requested_output_count: int
+    requested_width: int
+    requested_height: int
+    explicit_references: tuple[str, ...]
+    payload: Mapping[str, Any]
 
 
 class Stage2Error(RuntimeError):

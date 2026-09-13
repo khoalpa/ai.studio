@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import zipfile
+from dataclasses import replace
 from pathlib import Path
 
 import pytest
@@ -10,10 +11,16 @@ from audio_story.adapters.llm.base import LLMAdapterError
 from audio_story.adapters.llm.mock import DeterministicMockAdapter
 from audio_story.cli import main
 from audio_story.domain.stage1 import Stage1Request, Stage1Status
+from audio_story.domain.stage2 import ZONE_IMAGE_BASENAMES, Stage2Error
 from audio_story.validation.canonical import sha256_bytes
 from audio_story.validation.stage2 import load_stage1_package
 from audio_story.workflows import Stage1Service, WorkflowKernel
 from audio_story.workflows.recovery import recover
+from audio_story.workflows.stage2_planning import (
+    build_stage2_zone_plan,
+    compile_stage2_invocation,
+    validate_stage2_invocation,
+)
 
 
 @pytest.fixture
@@ -37,6 +44,30 @@ def test_stage2_intake_reopens_authoritative_stage1_package(tmp_path, canonical_
         assert source.manifest["active_profile"] == "YOUTH_SAFE"
         assert source.series_anchor_bytes is None
         assert result.package_path.read_bytes() == before
+        plan = build_stage2_zone_plan(source)
+        assert plan.packaging_basenames == ZONE_IMAGE_BASENAMES
+        assert plan.execution_queue == ZONE_IMAGE_BASENAMES
+        assert plan.identity_pilot_basename == "introduction.png"
+        assert plan.calibration_basename == "opening.png"
+
+        committed: list[str] = []
+        for basename in plan.execution_queue:
+            invocation = compile_stage2_invocation(plan, basename, committed_basenames=committed)
+            assert invocation.target_basename == basename
+            assert invocation.requested_output_count == 1
+            expected_references = (
+                ()
+                if basename in {"greeting.png", "farewell.png", "outro.png"}
+                else ("characters/char_001.png",)
+            )
+            assert invocation.explicit_references == expected_references
+            committed.append(basename)
+
+        first = compile_stage2_invocation(plan, "introduction.png")
+        with pytest.raises(Stage2Error, match="M7B114_CARDINALITY"):
+            validate_stage2_invocation(replace(first, requested_output_count=2), plan)
+        with pytest.raises(Stage2Error, match="M7B101_QUEUE_ORDER"):
+            compile_stage2_invocation(plan, "cover.png")
     finally:
         kernel.close()
 

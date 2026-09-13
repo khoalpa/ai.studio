@@ -216,6 +216,27 @@ def validate_visual_plan_bytes(data: bytes) -> OrderedObject:
         _require(
             all(asset.get("role") != "SCENE" for asset in assets), "M7A124_MIXED_MODE", "$.assets"
         )
+        fixed_roles = {
+            "cover.png": "COVER",
+            "greeting.png": "GREETING",
+            "farewell.png": "FAREWELL",
+            "outro.png": "OUTRO",
+        }
+        for index, asset in enumerate(assets):
+            basename = asset["basename"]
+            expected_role = fixed_roles.get(basename, "ZONE")
+            _require(asset["role"] == expected_role, "M7A126_ZONE_ROLE", f"$.assets[{index}].role")
+            _require(
+                asset["landscape_image"] == f"landscape/{basename}"
+                and asset["portrait_image"] == f"portrait/{basename}",
+                "M7A127_IMAGE_PATH",
+                f"$.assets[{index}]",
+            )
+            _require(
+                asset["script_item_start"] is None and asset["script_item_end"] is None,
+                "M7A128_ZONE_SPAN",
+                f"$.assets[{index}]",
+            )
     expected = parsed.get("visual_plan_digest_sha256")
     _digest(expected, "M7A125_PLAN_DIGEST", "$.visual_plan_digest_sha256")
     projection = OrderedDict(parsed)
