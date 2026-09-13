@@ -1,6 +1,6 @@
 # M6-B Checkpoint 2 — Tesseract production adapter
 
-Status: implementation candidate, uncommitted and pending review.
+Status: reviewed and committed at `7cd8fe3`.
 
 This checkpoint adds the local Tesseract TSV adapter, typed production binding fields, deterministic
 negative tests and an explicit digest-bound production smoke harness. It does not modify ComfyUI or
@@ -40,5 +40,5 @@ Toolchain: bundled Python 3.12.14, Ruff 0.16.7, mypy 2.3.1 strict and pytest 9.1
 - `docs/tesseract-adapter.md`
 - `docs/status/M6-B-OCR.md`
 
-The candidate remains uncommitted. ComfyUI stays `BLOCKED`; production typography/font remains
+The OCR checkpoint is committed. ComfyUI stays `BLOCKED`; production typography/font remains
 `MISSING` / `NOT_VERIFIED`; complete M6 production is not declared done and M7 remains out of scope.
