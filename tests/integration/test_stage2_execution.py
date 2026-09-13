@@ -15,6 +15,11 @@ from audio_story.domain.state import WorkflowStatus
 from audio_story.validation.stage2 import load_stage1_package, validate_stage2_progress_bytes
 from audio_story.workflows import Stage1Service, WorkflowKernel
 from audio_story.workflows.stage2_execution import Stage2ZoneExecutor
+from audio_story.workflows.stage2_gates import (
+    SemanticAssessment,
+    evaluate_stage2_landscape_gates,
+    require_stage2_gate_pass,
+)
 from audio_story.workflows.stage2_planning import build_stage2_zone_plan
 
 
@@ -58,6 +63,30 @@ def test_stage2_mock_queue_resumes_and_repairs_only_failed_basename(tmp_path: Pa
     assert completed.committed_count == 10
     assert completed.next_pending_basename is None
     assert completed.progress_path is None
+    blocked = evaluate_stage2_landscape_gates(kernel, stage, plan, {})
+    assert blocked.status == "NOT_VERIFIED"
+    assert blocked.semantic_pass_count == 0
+    try:
+        require_stage2_gate_pass(blocked)
+    except Exception as exc:
+        assert "M7C299_AGGREGATE_BLOCKED" in str(exc)
+    else:
+        raise AssertionError("missing semantic evidence must block Stage 2")
+
+    fixture_assessments = {
+        basename: SemanticAssessment(
+            basename,
+            "PASS",
+            "TEST_ONLY_DETERMINISTIC_SEMANTIC_FIXTURE",
+            f"{index:064x}",
+            (f"fixture-observable-{index}",),
+        )
+        for index, basename in enumerate(plan.execution_queue, 1)
+    }
+    passed = evaluate_stage2_landscape_gates(kernel, stage, plan, fixture_assessments)
+    require_stage2_gate_pass(passed)
+    assert passed.status == "PASS"
+    assert passed.semantic_pass_count == 10
     rows = kernel.db.connection.execute(
         "SELECT basename,status FROM asset_transactions WHERE stage_run_id=? ORDER BY created_at",
         (stage,),
