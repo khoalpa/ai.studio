@@ -10,9 +10,10 @@ import pytest
 from audio_story.adapters.llm.base import LLMAdapterError
 from audio_story.adapters.llm.mock import DeterministicMockAdapter
 from audio_story.cli import main
-from audio_story.domain.stage1 import Stage1Request, Stage1Status
+from audio_story.domain.stage1 import Stage1Error, Stage1Request, Stage1Status
 from audio_story.domain.stage2 import ZONE_IMAGE_BASENAMES, Stage2Error
 from audio_story.validation.canonical import sha256_bytes
+from audio_story.validation.stage1 import ZONE_ORDER
 from audio_story.validation.stage2 import load_stage1_package
 from audio_story.workflows import Stage1Service, WorkflowKernel
 from audio_story.workflows.recovery import recover
@@ -26,6 +27,55 @@ from audio_story.workflows.stage2_planning import (
 @pytest.fixture
 def canonical_path() -> Path:
     return Path(__file__).parents[2] / "canonical" / "ChatGPT_prompt_v3.16.13.txt"
+
+
+def _zone_response(
+    zone: str, count: int, total_words: int | None = None, prefix: str = "raw"
+) -> bytes:
+    total_words = total_words or count * 5
+    per_item, remainder = divmod(total_words, count)
+    return json.dumps(
+        {
+            "schema_version": "1.0",
+            "zone": zone,
+            "status": "PASS",
+            "items": [
+                {
+                    "item_id": f"{prefix}_{index + 1:03d}",
+                    "speaker_id": "narrator",
+                    "voice": "narrator",
+                    "speed": "1.0",
+                    "environment": "quiet room",
+                    "text": " ".join(
+                        [f"{prefix}Sentence{index + 1}"]
+                        + ["story"] * (per_item + (1 if index < remainder else 0) - 1)
+                    )
+                    + ".",
+                }
+                for index in range(count)
+            ],
+        },
+        separators=(",", ":"),
+    ).encode()
+
+
+def _item_responses(item_counts: list[int], word_totals: list[int]) -> list[bytes]:
+    responses: list[bytes] = []
+    for zone, count, total in zip(ZONE_ORDER, item_counts, word_totals, strict=True):
+        per_item, remainder = divmod(total, count)
+        for index in range(count):
+            item_words = per_item + (1 if index < remainder else 0)
+            per_segment, segment_remainder = divmod(item_words, 3)
+            responses.extend(
+                _zone_response(
+                    zone,
+                    1,
+                    per_segment + (1 if segment < segment_remainder else 0),
+                    f"{zone.lower()}_{index + 1}_{segment + 1}",
+                )
+                for segment in range(3)
+            )
+    return responses
 
 
 def test_stage2_intake_reopens_authoritative_stage1_package(tmp_path, canonical_path) -> None:
@@ -159,17 +209,199 @@ def test_duration_wait_and_resume_reuses_workflow(tmp_path, canonical_path) -> N
         kernel.close()
 
 
-def test_production_path_waits_for_m6(tmp_path, canonical_path) -> None:
+def test_production_path_commits_structured_phases_then_waits_for_m6(
+    tmp_path, canonical_path
+) -> None:
     kernel = WorkflowKernel(tmp_path)
     try:
-        result = Stage1Service(kernel, DeterministicMockAdapter(), canonical_path).start(
+        responses = [
+            b'{"schema_version":"1.0","phase":"plan","status":"PASS","payload":{"premise":"p","beats":["b"]}}',
+            b'{"schema_version":"1.0","phase":"draft","status":"PASS","payload":{"script":["s"]}}',
+            b'{"schema_version":"1.0","phase":"review","status":"PASS","payload":{"verdict":"approved","findings":["none"]}}',
+            b'{"schema_version":"1.0","phase":"repair","status":"PASS","payload":{"script":["s2"],"resolved_findings":["none"]}}',
+        ] + _item_responses([8, 8, 8, 8, 7, 7, 7, 7], [688, 688, 688, 688, 687, 687, 687, 687])
+        instructions: list[str] = []
+
+        class RecordingAdapter(DeterministicMockAdapter):
+            def generate_structured(self, request, cancellation):
+                instructions.append(request.instruction)
+                return super().generate_structured(request, cancellation)
+
+        result = Stage1Service(kernel, RecordingAdapter(responses=responses), canonical_path).start(
             Stage1Request("ADULT_STANDARD", duration_minutes=25, duration_confirmed=True)
         )
         assert result.status is Stage1Status.WAITING_DEPENDENCY
         assert result.package_path is None
-        assert result.reason_code == "S143_TEST_ASSET_PRODUCTION_PATH"
+        assert result.reason_code == "S144_CHARACTER_REFERENCE_PRODUCTION_REQUIRED"
+        rows = kernel.db.connection.execute(
+            "SELECT basename,status FROM asset_transactions"
+        ).fetchall()
+        assert {(row["basename"], row["status"]) for row in rows} == {
+            (f"{phase}.json", "COMMITTED") for phase in ("plan", "draft", "review", "repair")
+        } | {
+            (f"segment-{zone.lower()}-{item + 1:03d}-{segment + 1:02d}.json", "COMMITTED")
+            for zone_index, zone in enumerate(ZONE_ORDER)
+            for item in range(8 if zone_index < 4 else 7)
+            for segment in range(3)
+        } | {("serialize.json", "COMMITTED")}
+        assert (
+            kernel.db.connection.execute(
+                "SELECT COUNT(*) FROM gate_results WHERE gate_id LIKE 'STAGE1_%_CHECKPOINT' "
+                "AND status='PASS'"
+            ).fetchone()[0]
+            == 184
+        )
+        for index, instruction in enumerate(instructions[:4]):
+            for upstream in responses[:index]:
+                assert upstream.decode("utf-8") in instruction
+        for instruction in instructions[4:]:
+            for upstream in responses[:4]:
+                assert upstream.decode("utf-8") in instruction
+            assert 'speed "1.0"' in instruction
+            assert "Every item field must be a JSON string" in instruction
+        evidence = kernel.db.connection.execute(
+            "SELECT evidence_json FROM gate_results "
+            "WHERE gate_id='STAGE1_ZONE_GREETING_CHECKPOINT' LIMIT 1"
+        ).fetchone()[0]
+        assert '"segment_schema_version":"M5P-SEGMENT-SCHEMA-1.2"' in evidence
+        assert '"text_character_bounds":[120,230]' in evidence
     finally:
         kernel.close()
+
+
+def test_production_phase_invalid_field_order_never_commits(tmp_path, canonical_path) -> None:
+    kernel = WorkflowKernel(tmp_path)
+    try:
+        invalid = (
+            b'{"phase":"plan","schema_version":"1.0","status":"PASS",'
+            b'"payload":{"premise":"p","beats":["b"]}}'
+        )
+        with pytest.raises(Stage1Error, match="S111_RETRY_EXHAUSTED"):
+            Stage1Service(
+                kernel,
+                DeterministicMockAdapter(responses=[invalid, invalid]),
+                canonical_path,
+            ).start(Stage1Request("ADULT_STANDARD", duration_minutes=25, duration_confirmed=True))
+        assert (
+            kernel.db.connection.execute("SELECT COUNT(*) FROM artifact_bindings").fetchone()[0]
+            == 0
+        )
+    finally:
+        kernel.close()
+
+
+def test_production_invalid_zone_never_commits_or_serializes(tmp_path, canonical_path) -> None:
+    kernel = WorkflowKernel(tmp_path)
+    try:
+        placeholder = (
+            b'{"schema_version":"1.0","phase":"serialize","status":"PASS",'
+            b'"payload":{"story":{"premise":"placeholder","beats":["placeholder"]}}}'
+        )
+        responses = [
+            b'{"schema_version":"1.0","phase":"plan","status":"PASS","payload":{"premise":"p","beats":["b"]}}',
+            b'{"schema_version":"1.0","phase":"draft","status":"PASS","payload":{"script":["s"]}}',
+            b'{"schema_version":"1.0","phase":"review","status":"PASS","payload":{"verdict":"approved","findings":["none"]}}',
+            b'{"schema_version":"1.0","phase":"repair","status":"PASS","payload":{"script":["s2"],"resolved_findings":["none"]}}',
+            placeholder,
+            placeholder,
+        ]
+        with pytest.raises(Stage1Error, match="S163_ZONE_RETRY_EXHAUSTED"):
+            Stage1Service(
+                kernel, DeterministicMockAdapter(responses=responses), canonical_path
+            ).start(Stage1Request("ADULT_STANDARD", duration_minutes=25, duration_confirmed=True))
+        greeting = kernel.db.connection.execute(
+            "SELECT id,status FROM asset_transactions WHERE basename='segment-greeting-001-01.json'"
+        ).fetchone()
+        assert greeting["status"] == "FAILED_RETRYABLE"
+        assert (
+            kernel.db.connection.execute(
+                "SELECT COUNT(*) FROM artifact_bindings WHERE transaction_id=?",
+                (greeting["id"],),
+            ).fetchone()[0]
+            == 0
+        )
+        assert (
+            kernel.db.connection.execute(
+                "SELECT COUNT(*) FROM asset_transactions WHERE basename='serialize.json'"
+            ).fetchone()[0]
+            == 0
+        )
+    finally:
+        kernel.close()
+
+
+def test_production_zone_retry_reuses_transaction(tmp_path, canonical_path) -> None:
+    kernel = WorkflowKernel(tmp_path)
+    try:
+        invalid = _zone_response("OPENING", 5)
+        responses = [
+            b'{"schema_version":"1.0","phase":"plan","status":"PASS","payload":{"premise":"p","beats":["b"]}}',
+            b'{"schema_version":"1.0","phase":"draft","status":"PASS","payload":{"script":["s"]}}',
+            b'{"schema_version":"1.0","phase":"review","status":"PASS","payload":{"verdict":"approved","findings":["none"]}}',
+            b'{"schema_version":"1.0","phase":"repair","status":"PASS","payload":{"script":["s2"],"resolved_findings":["none"]}}',
+            invalid,
+        ] + _item_responses([5] * 8, [300] * 8)
+        result = Stage1Service(
+            kernel, DeterministicMockAdapter(responses=responses), canonical_path
+        ).start(Stage1Request("YOUTH_SAFE", duration_minutes=12, duration_confirmed=True))
+        assert result.reason_code == "S144_CHARACTER_REFERENCE_PRODUCTION_REQUIRED"
+        rows = kernel.db.connection.execute(
+            "SELECT t.id,g.id,g.attempt_index,g.status FROM asset_transactions t "
+            "JOIN generation_calls g ON g.transaction_id=t.id "
+            "WHERE t.basename='segment-greeting-001-01.json' ORDER BY g.attempt_index"
+        ).fetchall()
+        assert len({row["id"] for row in rows}) == 1
+        assert [(row["attempt_index"], row["status"]) for row in rows] == [
+            (1, "FAILED"),
+            (2, "FINISHED"),
+        ]
+    finally:
+        kernel.close()
+
+
+def test_production_zone_resume_skips_committed_zones(tmp_path, canonical_path) -> None:
+    root = tmp_path / "resume-zones"
+    responses = [
+        b'{"schema_version":"1.0","phase":"plan","status":"PASS","payload":{"premise":"p","beats":["b"]}}',
+        b'{"schema_version":"1.0","phase":"draft","status":"PASS","payload":{"script":["s"]}}',
+        b'{"schema_version":"1.0","phase":"review","status":"PASS","payload":{"verdict":"approved","findings":["none"]}}',
+        b'{"schema_version":"1.0","phase":"repair","status":"PASS","payload":{"script":["s2"],"resolved_findings":["none"]}}',
+    ] + _item_responses([5] * 8, [300] * 8)
+    adapter = DeterministicMockAdapter(responses=responses)
+    request = Stage1Request("YOUTH_SAFE", duration_minutes=12, duration_confirmed=True)
+    first_kernel = WorkflowKernel(root)
+    fired = False
+
+    def crash(name: str) -> None:
+        nonlocal fired
+        if name == "after_zone_opening" and not fired:
+            fired = True
+            raise RuntimeError("simulated process interruption")
+
+    try:
+        service = Stage1Service(first_kernel, adapter, canonical_path, fault_hook=crash)
+        with pytest.raises(RuntimeError, match="interruption"):
+            service.start(request)
+        workflow_id, stage_id = first_kernel.db.connection.execute(
+            "SELECT w.id,s.id FROM workflow_runs w JOIN stage_runs s ON s.workflow_id=w.id"
+        ).fetchone()
+    finally:
+        first_kernel.close()
+    reopened = WorkflowKernel(root)
+    try:
+        result = Stage1Service(reopened, adapter, canonical_path).resume_recovery(
+            workflow_id, stage_id, request
+        )
+        assert result.reason_code == "S144_CHARACTER_REFERENCE_PRODUCTION_REQUIRED"
+        zone_rows = reopened.db.connection.execute(
+            "SELECT t.basename,COUNT(g.id) calls FROM asset_transactions t "
+            "JOIN generation_calls g ON g.transaction_id=t.id "
+            "WHERE t.basename LIKE 'segment-%.json' GROUP BY t.basename"
+        ).fetchall()
+        assert len(zone_rows) == 120
+        assert all(row["calls"] == 1 for row in zone_rows)
+    finally:
+        reopened.close()
 
 
 def test_retry_reuses_transaction_and_changes_call_id(tmp_path, canonical_path) -> None:

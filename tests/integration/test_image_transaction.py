@@ -16,6 +16,7 @@ from audio_story.workflows import WorkflowKernel
 from audio_story.workflows.image_transaction import (
     ProductionOcrJob,
     ProductionTypographyJob,
+    SemanticImageGateResult,
     generate_single_image,
 )
 from audio_story.workflows.typography_production import ProductionTypographyConfig
@@ -65,6 +66,10 @@ def test_single_image_transaction_commits_only_after_png_qa(tmp_path: Path) -> N
     assert result.artifact_id is not None
     assert kernel.progress(stage) == (1, 1)
     assert kernel.db.connection.execute("SELECT COUNT(*) FROM artifact_bindings").fetchone()[0] == 1
+    authority = kernel.db.connection.execute(
+        "SELECT delivery_status,gate_status,immutable FROM image_artifact_authority"
+    ).fetchone()
+    assert tuple(authority) == ("AUTHORITATIVE", "PASS", 1)
     kernel.close()
 
 
@@ -257,6 +262,46 @@ def test_oom_retry_exhaustion_closes_calls_and_releases_gpu_semaphore(
     assert kernel.progress(stage) == (0, 1)
     with __import__("audio_story.adapters.image", fromlist=["gpu_job"]).gpu_job():
         pass
+    kernel.close()
+
+
+def test_semantic_gate_retry_pass_commits_authority(tmp_path: Path) -> None:
+    kernel = WorkflowKernel(tmp_path)
+    workflow = kernel.create_workflow("ADULT_STANDARD", "STAGE1", "CREATE", "a" * 64, "b" * 64)
+    kernel.transition_workflow(workflow, WorkflowStatus.RUNNING)
+    stage = kernel.start_stage(workflow, "STAGE1", "c" * 64)
+    outcomes = iter(("FAIL", "PASS"))
+
+    def assess(data: bytes, request: ImageRequest) -> SemanticImageGateResult:
+        status = next(outcomes)
+        return SemanticImageGateResult(
+            status,
+            {"image_sha256": __import__("hashlib").sha256(data).hexdigest()},
+            "mock-vlm",
+            "test",
+        )
+
+    result = generate_single_image(
+        kernel,
+        stage,
+        ImageRequest(
+            "character_0001.png", "d" * 64, "e" * 64, "mock", 4, 1, 32, 16, "PNG", 1, "tx", "call"
+        ),
+        DeterministicMockImageAdapter(),
+        owner_stage="STAGE1",
+        artifact_role="CHARACTER_ASSET",
+        max_attempts=2,
+        semantic_assessor=assess,
+    )
+    assert result.status == "AUTHORITATIVE"
+    assert kernel.progress(stage) == (1, 1)
+    rows = kernel.db.connection.execute(
+        "SELECT status,failure_code FROM generation_calls ORDER BY attempt_index"
+    ).fetchall()
+    assert [(row["status"], row["failure_code"]) for row in rows] == [
+        (CallStatus.FAILED, "IMG018_SEMANTIC_GATE_FAIL"),
+        (CallStatus.FINISHED, None),
+    ]
     kernel.close()
 
 

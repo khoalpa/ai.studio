@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import subprocess
 import sys
+from dataclasses import replace
 from threading import Event, Timer
 
 import pytest
@@ -89,18 +90,33 @@ def test_loopback_http_backend_without_real_network(monkeypatch: pytest.MonkeyPa
             return b'{"content":"{\\"ok\\":true}","model":"local.gguf"}'
 
     seen: list[str] = []
+    payloads: list[dict[str, object]] = []
 
     def fake_urlopen(request: object, timeout: float) -> Response:
         seen.append(str(request.full_url))  # type: ignore[attr-defined]
+        payloads.append(json.loads(request.data))  # type: ignore[attr-defined]
         assert timeout == 1
         return Response()
 
     monkeypatch.setattr("audio_story.adapters.llm.llama_cpp._open_local", fake_urlopen)
     adapter = LlamaCppAdapter(LlamaCppConfig(timeout_seconds=1))
-    result = adapter.generate_structured(_request(), Event())
+    result = adapter.generate_structured(replace(_request(), temperature=0.0, top_p=1.0), Event())
     assert result.content == b'{"ok":true}'
     assert result.model_identity == "local.gguf"
     assert seen == ["http://127.0.0.1:8080/completion"]
+    assert payloads == [
+        {
+            "prompt": (
+                '{"capsule":true}\n\n<|im_start|>user\nReturn JSON'
+                "\n<|im_end|>\n<|im_start|>assistant\n"
+            ),
+            "n_predict": 64,
+            "seed": 7,
+            "temperature": 0.0,
+            "top_p": 1.0,
+            "json_schema": {"type": "object"},
+        }
+    ]
 
 
 def test_http_truncated_output_and_invalid_semantic_are_errors(
@@ -135,6 +151,56 @@ def test_http_truncated_output_and_invalid_semantic_are_errors(
     with pytest.raises(LLMAdapterError) as caught:
         adapter.assess_semantic(_request(), Event())
     assert caught.value.code == "LLM011_SEMANTIC_RESPONSE"
+
+
+def test_http_uses_explicit_local_json_schema(monkeypatch: pytest.MonkeyPatch) -> None:
+    schema = {
+        "type": "object",
+        "properties": {"text": {"type": "string", "minLength": 120}},
+    }
+    seen: list[dict[str, object]] = []
+
+    class Response:
+        def __enter__(self) -> Response:
+            return self
+
+        def __exit__(self, *args: object) -> None:
+            return None
+
+        def read(self) -> bytes:
+            return b'{"content":"{\\"text\\":\\"long enough\\"}"}'
+
+    def fake_open(request: object, timeout: float) -> Response:
+        seen.append(json.loads(request.data))  # type: ignore[attr-defined]
+        return Response()
+
+    monkeypatch.setattr("audio_story.adapters.llm.llama_cpp._open_local", fake_open)
+    adapter = LlamaCppAdapter(LlamaCppConfig())
+    adapter.generate_structured(replace(_request(), json_schema=schema), Event())
+    assert seen[0]["json_schema"] == schema
+    for invalid in ({"type": "array"}, {"type": "object", "$ref": "https://example.test"}):
+        with pytest.raises(LLMAdapterError) as caught:
+            adapter.generate_structured(replace(_request(), json_schema=invalid), Event())
+        assert caught.value.code == "LLM015_JSON_SCHEMA"
+
+
+def test_http_limit_stop_type_is_truncated(monkeypatch: pytest.MonkeyPatch) -> None:
+    class Response:
+        def __enter__(self) -> Response:
+            return self
+
+        def __exit__(self, *args: object) -> None:
+            return None
+
+        def read(self) -> bytes:
+            return b'{"content":"{}","stop_type":"limit"}'
+
+    monkeypatch.setattr(
+        "audio_story.adapters.llm.llama_cpp._open_local", lambda *args, **kwargs: Response()
+    )
+    with pytest.raises(LLMAdapterError) as caught:
+        LlamaCppAdapter(LlamaCppConfig()).generate_structured(_request(), Event())
+    assert caught.value.code == "LLM008_TRUNCATED_OUTPUT"
 
 
 def test_subprocess_success_nonzero_empty_timeout_and_cancellation() -> None:

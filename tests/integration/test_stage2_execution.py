@@ -63,6 +63,7 @@ def test_stage2_mock_queue_resumes_and_repairs_only_failed_basename(tmp_path: Pa
     assert completed.committed_count == 10
     assert completed.next_pending_basename is None
     assert completed.progress_path is None
+    assert not progress.exists()
     blocked = evaluate_stage2_landscape_gates(kernel, stage, plan, {})
     assert blocked.status == "NOT_VERIFIED"
     assert blocked.semantic_pass_count == 0

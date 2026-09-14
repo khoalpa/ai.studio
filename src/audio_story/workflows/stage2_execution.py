@@ -64,6 +64,7 @@ class Stage2ZoneExecutor:
             (name for name in self.plan.execution_queue if name not in committed), None
         )
         if next_name is None:
+            self.progress_path.unlink(missing_ok=True)
             return Stage2ExecutionResult("READY_FOR_AGGREGATE_GATES", 10, None, None, None)
         invocation = compile_stage2_invocation(self.plan, next_name, committed_basenames=committed)
         plan_value = validate_visual_plan_bytes(self.plan.visual_plan_bytes)
@@ -115,7 +116,11 @@ class Stage2ZoneExecutor:
                 result.transaction_id,
             )
         current = self._committed()
-        path = None if len(current) == 10 else self._persist_progress()
+        if len(current) == 10:
+            self.progress_path.unlink(missing_ok=True)
+            path = None
+        else:
+            path = self._persist_progress()
         return Stage2ExecutionResult(
             "READY_FOR_AGGREGATE_GATES" if len(current) == 10 else "IN_PROGRESS",
             len(current),

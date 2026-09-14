@@ -7,6 +7,7 @@ from contextlib import suppress
 from dataclasses import dataclass, replace
 from pathlib import Path
 from threading import Event
+from typing import Any
 
 from audio_story.adapters.image.base import (
     DeliveryStatus,
@@ -26,7 +27,7 @@ from audio_story.adapters.ocr import (
     residual_text_detected,
 )
 from audio_story.domain.state import CallStatus, DetectorClass, GateStatus
-from audio_story.validation.canonical import sha256_bytes
+from audio_story.validation.canonical import canonical_json_bytes, sha256_bytes
 from audio_story.validation.images import PngInfo, validate_image_qa
 from audio_story.workflows.kernel import WorkflowKernel
 from audio_story.workflows.package_quarantine import ImageManifestEntry, validate_image_package
@@ -66,6 +67,14 @@ class ImageTransactionResult:
     final_ocr: OcrEvidence | None = None
 
 
+@dataclass(frozen=True, slots=True)
+class SemanticImageGateResult:
+    status: str
+    evidence: dict[str, Any]
+    model_identity: str
+    adapter_version: str
+
+
 def generate_single_image(
     kernel: WorkflowKernel,
     stage_id: str,
@@ -79,18 +88,22 @@ def generate_single_image(
     typography: ProductionTypographyJob | None = None,
     ocr: ProductionOcrJob | None = None,
     metadata_binder: Callable[[bytes, ImageRequest, ImageResponse], bytes] | None = None,
+    character_id: str = "",
+    semantic_assessor: Callable[[bytes, ImageRequest], SemanticImageGateResult] | None = None,
+    retry_seed_step: int = 0,
 ) -> ImageTransactionResult:
     """Generate exactly one PNG, validate it, and commit only a PASS candidate."""
     cancellation = cancellation if cancellation is not None else Event()
     transaction_id = kernel.get_or_create_transaction(stage_id, artifact_role, request.basename)
     last_call_id: str | None = None
-    for _ in range(max_attempts):
+    for attempt in range(max_attempts):
+        active_request = replace(request, seed=request.seed + attempt * retry_seed_step)
         call_id = kernel.begin_generation_call(
-            transaction_id, sha256_bytes(_request_bytes(request))
+            transaction_id, sha256_bytes(_request_bytes(active_request))
         )
         last_call_id = call_id
         active_request = replace(
-            request,
+            active_request,
             transaction_id=transaction_id,
             generation_call_id=call_id,
         )
@@ -148,12 +161,28 @@ def generate_single_image(
                 )
                 if final_ocr.normalized_text != normalize_ocr_text(ocr.expected_text):
                     raise OcrAdapterError("OCR020_TEXT_MISMATCH", "final OCR text does not match")
+            semantic_result = None
+            if semantic_assessor is not None:
+                semantic_result = semantic_assessor(artifact_bytes, active_request)
+                if semantic_result.status not in {"PASS", "FAIL"}:
+                    raise ImageAdapterError(
+                        "IMG019_SEMANTIC_GATE_INVALID", "semantic gate status is invalid"
+                    )
+                if semantic_result.evidence.get("image_sha256") != info.sha256:
+                    raise ImageAdapterError(
+                        "IMG019_SEMANTIC_GATE_INVALID",
+                        "semantic evidence is not bound to the exact image",
+                    )
+                if semantic_result.status != "PASS":
+                    raise ImageAdapterError(
+                        "IMG018_SEMANTIC_GATE_FAIL", "semantic image assessment rejected output"
+                    )
             validate_image_package(
                 (
                     ImageManifestEntry(
                         basename=active_request.basename,
                         owner_stage=owner_stage,
-                        character_id="",
+                        character_id=character_id,
                         digest=info.sha256,
                         size=len(artifact_bytes),
                         status=DeliveryStatus.AUTHORITATIVE,
@@ -185,6 +214,19 @@ def generate_single_image(
                 response.adapter_version,
                 active_request.workflow_digest,
             )
+            if semantic_result is not None:
+                kernel.record_gate(
+                    stage_id,
+                    artifact_id,
+                    "CHARACTER_SEMANTIC_GATE",
+                    DetectorClass.MODEL_SEMANTIC,
+                    GateStatus.PASS,
+                    semantic_result.evidence,
+                    active_request.prompt_digest,
+                    active_request.workflow_digest,
+                    semantic_result.adapter_version,
+                    sha256_bytes(canonical_json_bytes(semantic_result.evidence)),
+                )
             if typography_evidence is not None:
                 kernel.record_gate(
                     stage_id,
@@ -234,6 +276,23 @@ def generate_single_image(
                 duration_ms=response.duration_ms,
                 termination_reason=response.termination_reason,
             )
+            provenance = info.metadata.get("audio_story")
+            provenance_digest = (
+                sha256_bytes(canonical_json_bytes(provenance))
+                if isinstance(provenance, dict)
+                else info.sha256
+            )
+            kernel.store.register_image_candidate(
+                info.sha256,
+                owner_stage=owner_stage,
+                transaction_id=transaction_id,
+                generation_call_id=call_id,
+                delivery_status=DeliveryStatus.AUTHORITATIVE,
+                provenance_digest=provenance_digest,
+                evidence_digest=info.sha256,
+                gate_status=GateStatus.PASS,
+            )
+            kernel.store.bind_authoritative_artifact(info.sha256)
             _raise_if_cancelled(cancellation, adapter, call_id)
             kernel.commit_artifact(transaction_id, artifact_id)
             return ImageTransactionResult(
@@ -313,7 +372,7 @@ def _raise_if_cancelled(
 
 
 def _request_bytes(request: ImageRequest) -> bytes:
-    return "|".join(
+    base = "|".join(
         (
             request.basename,
             request.prompt_digest,
@@ -324,3 +383,4 @@ def _request_bytes(request: ImageRequest) -> bytes:
             str(request.requested_height),
         )
     ).encode()
+    return base + b"|" + canonical_json_bytes(request.commitment_context or {})

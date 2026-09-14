@@ -40,6 +40,10 @@ class GenerationRequest:
     schema_version: str | None = None
     field_order: tuple[str, ...] | None = None
     seed: int = 0
+    json_schema: dict[str, Any] | None = None
+    prompt_context: bytes | None = None
+    temperature: float | None = None
+    top_p: float | None = None
 
 
 @dataclass(frozen=True, slots=True)

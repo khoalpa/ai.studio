@@ -14,6 +14,8 @@ from audio_story.adapters.image.comfyui import ComfyUIImageAdapter
 
 def _workflow(tmp_path: Path) -> tuple[Path, str]:
     value = {
+        "2": {"inputs": {"text": "default positive"}},
+        "3": {"inputs": {"text": "default negative"}},
         "4": {"inputs": {}},
         "5": {"inputs": {}},
         "7": {"inputs": {}},
@@ -54,6 +56,37 @@ def test_real_api_sequence_returns_single_view_image(
         "pid",
         "view",
     ]
+
+
+def test_real_api_injects_digest_bound_dynamic_prompts(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    workflow, digest = _workflow(tmp_path)
+    submitted: dict[str, object] = {}
+
+    def fake_http(request: Request, timeout: float) -> bytes:
+        if request.full_url.endswith("/prompt"):
+            submitted.update(json.loads(request.data))
+            return b'{"prompt_id":"pid"}'
+        if "/history/" in request.full_url:
+            return b'{"pid":{"outputs":{"7":{"images":[{"filename":"one.png"}]}}}}'
+        return b"png-bytes"
+
+    adapter = ComfyUIImageAdapter(ComfyUIConfig(workflow_path=workflow))
+    monkeypatch.setattr(adapter, "_http", fake_http)
+    request = _request(digest)
+    request = __import__("dataclasses").replace(
+        request,
+        commitment_context={
+            "positive_prompt": "portrait of An",
+            "negative_prompt": "text, watermark",
+        },
+    )
+    adapter.generate_image(request, Event())
+    prompt = submitted["prompt"]
+    assert isinstance(prompt, dict)
+    assert prompt["2"]["inputs"]["text"] == "portrait of An"
+    assert prompt["3"]["inputs"]["text"] == "text, watermark"
 
 
 @pytest.mark.parametrize(

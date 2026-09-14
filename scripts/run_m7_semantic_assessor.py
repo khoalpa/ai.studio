@@ -25,7 +25,8 @@ def main() -> int:
         "Assess this exact Stage 2 landscape image against the supplied asset record. "
         "Return JSON only with keys status, method, observable_findings, hard_failures, "
         "and rationale. status must be PASS or FAIL. Do not infer hidden facts. "
-        "Do not treat metadata as visual evidence. Asset record: "
+        "Do not treat metadata as visual evidence. Use plain text inside JSON string "
+        "values: never include double quote characters inside a string value. Asset record: "
         + json.dumps(asset, ensure_ascii=False, separators=(",", ":"))
     )
     processor = AutoProcessor.from_pretrained(args.model, local_files_only=True)

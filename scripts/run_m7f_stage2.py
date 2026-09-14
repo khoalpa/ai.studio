@@ -11,6 +11,7 @@ from audio_story.adapters.image import ComfyUIConfig, ComfyUIImageAdapter
 from audio_story.domain.state import WorkflowStatus
 from audio_story.validation.stage2 import load_stage1_package
 from audio_story.workflows.kernel import WorkflowKernel
+from audio_story.workflows.recovery import recover
 from audio_story.workflows.stage2_execution import Stage2ZoneExecutor
 from audio_story.workflows.stage2_planning import build_stage2_zone_plan
 
@@ -23,6 +24,9 @@ def main() -> int:
     parser.add_argument("--canonical", type=Path, required=True)
     parser.add_argument("--test-mode", action="store_true")
     parser.add_argument("--execute", action="store_true")
+    parser.add_argument("--execute-all", action="store_true")
+    parser.add_argument("--workflow-id")
+    parser.add_argument("--stage-id")
     args = parser.parse_args()
     source = load_stage1_package(args.stage1_zip, test_mode=args.test_mode)
     plan = build_stage2_zone_plan(source)
@@ -30,22 +34,28 @@ def main() -> int:
     workflow_digest = hashlib.sha256(args.workflow.read_bytes()).hexdigest()
     kernel = WorkflowKernel(args.workspace)
     try:
-        workflow_id = kernel.create_workflow(
-            str(source.manifest["active_profile"]),
-            "STAGE2",
-            "CREATE",
-            canonical_digest,
-            workflow_digest,
-        )
-        kernel.transition_workflow(workflow_id, WorkflowStatus.RUNNING)
-        stage_id = kernel.start_stage(workflow_id, "STAGE2", canonical_digest)
+        if (args.workflow_id is None) != (args.stage_id is None):
+            raise ValueError("--workflow-id and --stage-id must be supplied together")
+        if args.workflow_id and args.stage_id:
+            workflow_id, stage_id = args.workflow_id, args.stage_id
+            recover(kernel, workflow_id)
+        else:
+            workflow_id = kernel.create_workflow(
+                str(source.manifest["active_profile"]),
+                "STAGE2",
+                "CREATE",
+                canonical_digest,
+                workflow_digest,
+            )
+            kernel.transition_workflow(workflow_id, WorkflowStatus.RUNNING)
+            stage_id = kernel.start_stage(workflow_id, "STAGE2", canonical_digest)
         result = {
             "workflow_id": workflow_id,
             "stage_id": stage_id,
             "status": "PREFLIGHT_ONLY",
             "next_basename": plan.execution_queue[0],
         }
-        if args.execute:
+        if args.execute or args.execute_all:
             adapter = ComfyUIImageAdapter(
                 ComfyUIConfig(workflow_path=args.workflow, timeout_seconds=300.0)
             )
@@ -61,7 +71,7 @@ def main() -> int:
                 model_identity="sd_xl_base_1.0.safetensors",
                 timeout_seconds=300.0,
             )
-            outcome = execution.execute_next()
+            outcome = execution.execute_all() if args.execute_all else execution.execute_next()
             result.update(
                 {
                     "status": outcome.status,

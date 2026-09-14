@@ -4,9 +4,10 @@ from __future__ import annotations
 
 from collections import OrderedDict
 from collections.abc import Callable
+from dataclasses import replace
 from pathlib import Path
 from threading import Event
-from typing import Any
+from typing import Any, cast
 
 from audio_story.adapters.llm.base import LocalLLMAdapter
 from audio_story.adapters.llm.models import GenerationKind, GenerationRequest, PromptCapsule
@@ -30,7 +31,9 @@ from audio_story.domain.state import (
 )
 from audio_story.prompt_compiler import compile_capsule, parse_prompt
 from audio_story.validation.canonical import canonical_json_bytes, sha256_bytes
+from audio_story.validation.errors import ValidationError
 from audio_story.validation.stage1 import (
+    ZONE_ORDER,
     final_script_digest,
     ordered_json_bytes,
     story_content_projection,
@@ -39,8 +42,19 @@ from audio_story.validation.stage1 import (
     validate_story_bytes,
     word_count,
 )
+from audio_story.validation.strict_json import OrderedObject, parse_json_bytes, validate_field_order
 from audio_story.workflows.kernel import WorkflowKernel
 from audio_story.workflows.recovery import recover
+from audio_story.workflows.stage1_capsule_projection import project_stage1_capsule
+from audio_story.workflows.stage1_characters import (
+    CharacterImageConfig,
+    generate_character_reference,
+)
+from audio_story.workflows.stage1_materialization import (
+    StoryQualityResult,
+    finalize_production_quality,
+    materialize_production_story,
+)
 from audio_story.workflows.stage1_package import (
     PROMPT_VERSION,
     build_manifest,
@@ -48,6 +62,12 @@ from audio_story.workflows.stage1_package import (
     build_story_zip,
     character_set_digest,
     mock_character_png,
+)
+from audio_story.workflows.stage1_zone_generation import (
+    ZONE_ITEM_ORDER,
+    ZONE_PAYLOAD_ORDER,
+    aggregate_zone_payloads,
+    validate_zone_payload,
 )
 
 
@@ -60,11 +80,16 @@ class Stage1Service:
         adapter: LocalLLMAdapter,
         canonical_path: Path,
         fault_hook: Callable[[str], None] | None = None,
+        character_image_config: CharacterImageConfig | None = None,
+        story_quality_assessor: Callable[[bytes, OrderedDict[str, bytes]], StoryQualityResult]
+        | None = None,
     ) -> None:
         self.kernel = kernel
         self.adapter = adapter
         self.canonical_path = canonical_path
         self.fault_hook = fault_hook
+        self.character_image_config = character_image_config
+        self.story_quality_assessor = story_quality_assessor
 
     def start(self, request: Stage1Request) -> Stage1Result:
         contract = resolve_profile(request.profile, request.language)
@@ -151,21 +176,106 @@ class Stage1Service:
             raise Stage1Error(
                 "S107_DURATION_RANGE", "duration is outside profile range", "$.duration_minutes"
             )
-        if not request.test_mode:
-            return Stage1Result(
-                Stage1Status.WAITING_DEPENDENCY,
-                workflow_id,
-                stage_id,
-                reason_code="S143_TEST_ASSET_PRODUCTION_PATH",
-            )
         stage_status = self.kernel.db.connection.execute(
             "SELECT status FROM stage_runs WHERE id=?", (stage_id,)
         ).fetchone()[0]
         if stage_status == StageStatus.PREFLIGHT:
             self.kernel.transition_stage(stage_id, StageStatus.GENERATING)
-        for phase in ("plan", "draft", "review", "repair", "serialize"):
-            self._call_phase(stage_id, phase, capsule, request.seed)
+        phase_outputs: list[bytes] = []
+        phases = (
+            ("plan", "draft", "review", "repair")
+            if not request.test_mode
+            else ("plan", "draft", "review", "repair", "serialize")
+        )
+        for phase in phases:
+            phase_outputs.append(
+                self._call_phase(
+                    stage_id,
+                    phase,
+                    capsule,
+                    request.seed,
+                    production=not request.test_mode,
+                    upstream_outputs=tuple(phase_outputs),
+                )
+            )
             self._boundary(f"after_{phase}")
+        if not request.test_mode:
+            phase_outputs.append(
+                self._build_production_serialize(
+                    stage_id, request, contract, capsule, tuple(phase_outputs)
+                )
+            )
+            self._boundary("after_serialize")
+            if self.character_image_config is None:
+                return Stage1Result(
+                    Stage1Status.WAITING_DEPENDENCY,
+                    workflow_id,
+                    stage_id,
+                    reason_code="S144_CHARACTER_REFERENCE_PRODUCTION_REQUIRED",
+                )
+            serialized = parse_json_bytes(
+                phase_outputs[-1], "stage1_serialize.json", engine_generated=True
+            ).value
+            characters = serialized["payload"]["story"]["characters"]
+            image_results = []
+            for index, character in enumerate(characters):
+                result = generate_character_reference(
+                    self.kernel,
+                    stage_id,
+                    character,
+                    capsule.digest,
+                    request.seed + index,
+                    self.character_image_config,
+                )
+                if result.status != "AUTHORITATIVE":
+                    raise Stage1Error(
+                        "S145_CHARACTER_REFERENCE_GENERATION_FAILED",
+                        "production character reference did not pass image authority",
+                        str(character["character_id"]),
+                    )
+                image_results.append(result)
+            story, assets, story_bytes = materialize_production_story(
+                self.kernel,
+                serialized["payload"]["story"],
+                image_results,
+                request,
+                contract,
+            )
+            if self.story_quality_assessor is None:
+                return Stage1Result(
+                    Stage1Status.WAITING_DEPENDENCY,
+                    workflow_id,
+                    stage_id,
+                    reason_code="S147_PRODUCTION_QUALITY_EVIDENCE_REQUIRED",
+                )
+            quality = self.story_quality_assessor(story_bytes, assets)
+            story_bytes = finalize_production_quality(story, assets, quality)
+            parsed_story = validate_story_bytes(story_bytes, contract)
+            self._checkpoint_bytes(stage_id, "story.json", story_bytes, capsule)
+            report = _build_report(
+                story,
+                story_bytes,
+                assets,
+                contract,
+                quality_evidence=quality.evidence,
+            )
+            report_bytes = ordered_json_bytes(report)
+            validate_report_bytes(report_bytes, story_bytes, parsed_story)
+            self._checkpoint_bytes(stage_id, "story_validation.json", report_bytes, capsule)
+            return self._publish_stage1_package(
+                workflow_id,
+                stage_id,
+                contract,
+                capsule,
+                story_bytes,
+                report_bytes,
+                assets,
+                anchor_bytes=(
+                    build_series_anchor(story)
+                    if contract.profile.value == "SERIAL_DETECTIVE"
+                    else None
+                ),
+            )
         story, assets = _build_story(request, contract)
         self._boundary("after_final_integrity")
         validate_character_assets(story, assets, test_mode=request.test_mode)
@@ -264,6 +374,79 @@ class Stage1Service:
         self.kernel.transition_workflow(workflow_id, WorkflowStatus.COMPLETED)
         return Stage1Result(Stage1Status.PASS, workflow_id, stage_id, output, package_digest)
 
+    def _publish_stage1_package(
+        self,
+        workflow_id: str,
+        stage_id: str,
+        contract: ProfileContract,
+        capsule: PromptCapsule,
+        story_bytes: bytes,
+        report_bytes: bytes,
+        assets: OrderedDict[str, bytes],
+        anchor_bytes: bytes | None,
+    ) -> Stage1Result:
+        """Publish a validated production Stage 1 package idempotently."""
+        pending = self.kernel.workspace / "outputs" / workflow_id / ".pending"
+        pending.mkdir(parents=True, exist_ok=True)
+        members: OrderedDict[str, bytes] = OrderedDict()
+        members["story.json"] = story_bytes
+        members["story_validation.json"] = report_bytes
+        members.update(assets)
+        if anchor_bytes is not None:
+            members["series_anchor.json"] = anchor_bytes
+        manifest = build_manifest(contract.profile, story_bytes, members)
+        (pending / "workflow_manifest.json").write_bytes(manifest)
+        self._checkpoint_bytes(stage_id, "workflow_manifest.json", manifest, capsule)
+        self._boundary("after_manifest_write")
+        output = self.kernel.workspace / "outputs" / workflow_id / "story.zip"
+        package_digest = build_story_zip(output, manifest, members)
+        self._boundary("after_zip_publish")
+        package_transaction = self.kernel.get_or_create_transaction(
+            stage_id, "PACKAGE", "story.zip"
+        )
+        status = self.kernel.db.connection.execute(
+            "SELECT status FROM asset_transactions WHERE id=?", (package_transaction,)
+        ).fetchone()[0]
+        if status != TransactionStatus.COMMITTED:
+            package_call = self.kernel.begin_generation_call(
+                package_transaction,
+                sha256_bytes(canonical_json_bytes({"package_digest": package_digest})),
+                model_identity="deterministic-packager",
+                adapter_version="M5-1.0",
+            )
+            package_artifact = self.kernel.register_candidate(
+                package_call,
+                output.read_bytes(),
+                "application/zip",
+                "STAGE1",
+                artifact_role="ARCHIVE",
+                dependency_digest=capsule.digest,
+            )
+            self.kernel.record_gate(
+                stage_id,
+                package_artifact,
+                "STAGE1_PACKAGE_GATE",
+                DetectorClass.DETERMINISTIC,
+                GateStatus.PASS,
+                {"package_digest": package_digest, "post_package_reopen": "PASS"},
+                sha256_bytes(self.canonical_path.read_bytes()),
+                capsule.digest,
+                "M5-1.0",
+                capsule.digest,
+            )
+            self.kernel.finish_generation_call(
+                package_call,
+                CallStatus.FINISHED,
+                package_digest,
+                model_identity="deterministic-packager",
+                adapter_version="M5-1.0",
+                duration_ms=0,
+                termination_reason="COMPLETED",
+            )
+            self.kernel.commit_artifact(package_transaction, package_artifact)
+            self._boundary("after_zip_binding")
+        return self._finish(workflow_id, stage_id, output, package_digest)
+
     def _checkpoint_bytes(
         self, stage_id: str, basename: str, data: bytes, capsule: PromptCapsule
     ) -> None:
@@ -311,19 +494,55 @@ class Stage1Service:
         )
         self.kernel.commit_artifact(transaction, artifact)
 
-    def _call_phase(self, stage_id: str, phase: str, capsule: PromptCapsule, seed: int) -> None:
+    def _call_phase(
+        self,
+        stage_id: str,
+        phase: str,
+        capsule: PromptCapsule,
+        seed: int,
+        *,
+        production: bool,
+        upstream_outputs: tuple[bytes, ...],
+    ) -> bytes:
         transaction = self.kernel.get_or_create_transaction(stage_id, "TEXT", f"{phase}.json")
         status = self.kernel.db.connection.execute(
             "SELECT status FROM asset_transactions WHERE id=?", (transaction,)
         ).fetchone()[0]
         if status == TransactionStatus.COMMITTED:
-            return
-        instruction = f"STAGE1_{phase.upper()} digest-only bounded call"
+            row = self.kernel.db.connection.execute(
+                "SELECT a.sha256 FROM artifact_bindings b "
+                "JOIN artifacts a ON a.id=b.artifact_id "
+                "WHERE b.transaction_id=? AND b.role='COMMITTED'",
+                (transaction,),
+            ).fetchone()
+            if row is None:
+                raise Stage1Error(
+                    "S160_RECOVERY_CONFLICT", "committed phase has no artifact binding", phase
+                )
+            committed = self.kernel.store.get_artifact_by_digest(str(row["sha256"]))
+            if production:
+                try:
+                    _validate_production_phase(committed, phase)
+                except (ValidationError, ValueError, KeyError) as exc:
+                    raise Stage1Error(
+                        "S161_COMMITTED_PHASE_SCHEMA_DRIFT",
+                        "committed production phase no longer satisfies the active contract",
+                        phase,
+                    ) from exc
+            return committed
+        instruction = (
+            _production_phase_instruction(phase, upstream_outputs)
+            if production
+            else f"STAGE1_{phase.upper()} digest-only bounded call"
+        )
         request = GenerationRequest(
             capsule,
             instruction,
-            GenerationKind.TEXT,
+            GenerationKind.STRUCTURED if production else GenerationKind.TEXT,
             max_output_tokens=8192,
+            schema_name=f"stage1_{phase}.json" if production else None,
+            schema_version="1.0" if production else None,
+            field_order=PRODUCTION_PHASE_ROOT_ORDER if production else None,
             seed=seed,
         )
         request_digest = sha256_bytes(
@@ -336,7 +555,16 @@ class Stage1Service:
             call_id = self.kernel.begin_generation_call(transaction, request_digest)
             try:
                 self._boundary(f"during_{phase}")
-                if phase in {"review", "repair"}:
+                if production:
+                    response = self.adapter.generate_structured(request, Event())
+                    _validate_production_phase(response.content, phase)
+                    response_digest = sha256_bytes(response.content)
+                    evidence_bytes = response.content
+                    model = response.model_identity
+                    version = response.adapter_version
+                    duration_ms = response.duration_ms
+                    termination = str(response.termination_reason)
+                elif phase in {"review", "repair"}:
                     assessment = self.adapter.assess_semantic(request, Event())
                     response_digest = sha256_bytes(canonical_json_bytes(assessment.evidence))
                     model = "semantic-local"
@@ -350,8 +578,8 @@ class Stage1Service:
                     model = response.model_identity
                     version = response.adapter_version
                     duration_ms = response.duration_ms
-                    termination = response.termination_reason
-                if phase in {"review", "repair"}:
+                    termination = str(response.termination_reason)
+                if not production and phase in {"review", "repair"}:
                     evidence_bytes = canonical_json_bytes(assessment.evidence)
                 artifact = self.kernel.register_candidate(
                     call_id,
@@ -367,7 +595,12 @@ class Stage1Service:
                     f"STAGE1_{phase.upper()}_CHECKPOINT",
                     DetectorClass.DETERMINISTIC,
                     GateStatus.PASS,
-                    {"phase": phase, "response_digest": response_digest},
+                    {
+                        "phase": phase,
+                        "response_digest": response_digest,
+                        "schema_version": "1.0" if production else "TEST_ONLY",
+                        "field_order": list(PRODUCTION_PHASE_ROOT_ORDER) if production else [],
+                    },
                     sha256_bytes(self.canonical_path.read_bytes()),
                     capsule.digest,
                     "M5-1.0",
@@ -383,7 +616,7 @@ class Stage1Service:
                     termination_reason=termination,
                 )
                 self.kernel.commit_artifact(transaction, artifact)
-                return
+                return evidence_bytes
             except Exception as exc:
                 last_error = exc
                 self.kernel.finish_generation_call(
@@ -394,6 +627,337 @@ class Stage1Service:
                 )
         raise Stage1Error(
             "S111_RETRY_EXHAUSTED", "local generation retry budget exhausted", phase
+        ) from last_error
+
+    def _build_production_serialize(
+        self,
+        stage_id: str,
+        request: Stage1Request,
+        contract: ProfileContract,
+        capsule: PromptCapsule,
+        upstream_outputs: tuple[bytes, ...],
+    ) -> bytes:
+        """Generate bounded zone payloads and deterministically assemble serialize.json."""
+        plan = _validate_production_phase(upstream_outputs[0], "plan")
+        counts = _zone_item_counts(contract.min_script_items)
+        word_budgets = _zone_word_budgets(contract)
+        zones: dict[str, OrderedObject] = {}
+        for index, zone in enumerate(ZONE_ORDER):
+            minimum, maximum = word_budgets[zone]
+            minimum_item, minimum_remainder = divmod(minimum, counts[zone])
+            maximum_item, maximum_remainder = divmod(maximum, counts[zone])
+            items: list[OrderedObject] = []
+            for item_index in range(counts[zone]):
+                item_budget = (
+                    minimum_item + (1 if item_index < minimum_remainder else 0),
+                    maximum_item + (1 if item_index < maximum_remainder else 0),
+                )
+                item = self._call_zone_item(
+                    stage_id,
+                    zone,
+                    item_index + 1,
+                    item_budget,
+                    capsule,
+                    request.seed + index * 100 + item_index,
+                    upstream_outputs,
+                )
+                item["item_id"] = f"{zone.lower()}_{item_index + 1:03d}"
+                items.append(item)
+            zones[zone] = OrderedObject(
+                [
+                    ("schema_version", "1.0"),
+                    ("zone", zone),
+                    ("status", "PASS"),
+                    ("items", items),
+                ]
+            )
+            self._boundary(f"after_zone_{zone.lower()}")
+        last_text = str(zones[ZONE_ORDER[-1]]["items"][-1]["text"])
+        characters: list[OrderedDict[str, Any]] = [
+            OrderedDict(
+                character_id="char_001",
+                name="Nhân vật chính",
+                age=16 if str(contract.profile) == "YOUTH_SAFE" else 30,
+                role="protagonist",
+                description=f"Nhân vật trung tâm của {request.title}.",
+            )
+        ]
+        story = aggregate_zone_payloads(
+            request.title,
+            characters,
+            str(plan["payload"]["premise"]),
+            last_text,
+            zones,
+            counts,
+            word_budgets,
+        )
+        serialized = ordered_json_bytes(
+            OrderedDict(
+                schema_version="1.0",
+                phase="serialize",
+                status="PASS",
+                payload=OrderedDict(story=story),
+            )
+        )
+        _validate_production_phase(serialized, "serialize")
+        self._checkpoint_bytes(stage_id, "serialize.json", serialized, capsule)
+        return serialized
+
+    def _call_zone_item(
+        self,
+        stage_id: str,
+        zone: str,
+        item_index: int,
+        word_budget: tuple[int, int],
+        capsule: PromptCapsule,
+        seed: int,
+        upstream_outputs: tuple[bytes, ...],
+    ) -> OrderedObject:
+        segment_count = 3
+        minimum, minimum_remainder = divmod(word_budget[0], segment_count)
+        maximum, maximum_remainder = divmod(word_budget[1], segment_count)
+        texts: list[str] = []
+        for segment_index in range(segment_count):
+            segment_budget = (
+                minimum + (1 if segment_index < minimum_remainder else 0),
+                maximum + (1 if segment_index < maximum_remainder else 0),
+            )
+            segment = self._call_segment(
+                stage_id,
+                zone,
+                item_index,
+                segment_index + 1,
+                segment_budget,
+                capsule,
+                seed + (item_index - 1) * segment_count + segment_index,
+                upstream_outputs,
+            )
+            texts.append(str(segment["text"]).strip())
+        item = OrderedObject(
+            [
+                ("item_id", f"{zone.lower()}_{item_index:03d}"),
+                ("speaker_id", "narrator"),
+                ("voice", "narrator"),
+                ("speed", "1.0"),
+                ("environment", "story setting"),
+                ("text", " ".join(texts)),
+            ]
+        )
+        wrapper = OrderedObject(
+            [
+                ("schema_version", "1.0"),
+                ("zone", zone),
+                ("status", "PASS"),
+                ("items", [item]),
+            ]
+        )
+        validate_zone_payload(wrapper, zone, 1, *word_budget)
+        return item
+
+    def _call_segment(
+        self,
+        stage_id: str,
+        zone: str,
+        item_index: int,
+        segment_index: int,
+        word_budget: tuple[int, int],
+        capsule: PromptCapsule,
+        seed: int,
+        upstream_outputs: tuple[bytes, ...],
+    ) -> OrderedObject:
+        basename = f"segment-{zone.lower()}-{item_index:03d}-{segment_index:02d}.json"
+        transaction = self.kernel.get_or_create_transaction(stage_id, "TEXT", basename)
+        status = self.kernel.db.connection.execute(
+            "SELECT status FROM asset_transactions WHERE id=?", (transaction,)
+        ).fetchone()[0]
+        if status == TransactionStatus.COMMITTED:
+            row = self.kernel.db.connection.execute(
+                "SELECT a.sha256 FROM artifact_bindings b JOIN artifacts a ON a.id=b.artifact_id "
+                "WHERE b.transaction_id=? AND b.role='COMMITTED'",
+                (transaction,),
+            ).fetchone()
+            if row is None:
+                raise Stage1Error("S160_RECOVERY_CONFLICT", "committed zone has no binding", zone)
+            committed = self.kernel.store.get_artifact_by_digest(str(row["sha256"]))
+            try:
+                parsed = parse_json_bytes(committed, basename, engine_generated=True).value
+                try:
+                    validated = validate_zone_payload(parsed, zone, 1, *word_budget)
+                except ValueError as exc:
+                    message = str(exc)
+                    code = (
+                        "S164_SEGMENT_UNDER_BUDGET"
+                        if "below its word budget" in message
+                        else "S165_SEGMENT_OVER_BUDGET"
+                        if "exceeds its word budget" in message
+                        else "S162_ZONE_GENERATION_FAILURE"
+                    )
+                    raise _SegmentRejection(code, message) from exc
+                return cast(OrderedObject, validated["items"][0])
+            except (ValidationError, ValueError, KeyError) as exc:
+                raise Stage1Error(
+                    "S161_COMMITTED_PHASE_SCHEMA_DRIFT",
+                    "committed zone no longer satisfies the active contract",
+                    zone,
+                ) from exc
+        instruction = _production_zone_instruction(
+            zone,
+            1,
+            word_budget,
+            upstream_outputs,
+            item_index=item_index,
+            segment_index=segment_index,
+        )
+        prompt_context = project_stage1_capsule(capsule)
+        generation_request = GenerationRequest(
+            capsule,
+            instruction,
+            GenerationKind.STRUCTURED,
+            max_output_tokens=4096,
+            field_order=ZONE_PAYLOAD_ORDER,
+            seed=seed,
+            json_schema=_segment_json_schema(word_budget, zone, item_index, segment_index),
+            prompt_context=prompt_context,
+            temperature=0.3,
+            top_p=0.9,
+        )
+        schema_digest = sha256_bytes(canonical_json_bytes(generation_request.json_schema))
+        context_digest = sha256_bytes(prompt_context)
+        last_error: Exception | None = None
+        retry_feedback = ""
+        attempt_offset = self.kernel.db.connection.execute(
+            "SELECT COUNT(*) FROM generation_calls WHERE transaction_id=?", (transaction,)
+        ).fetchone()[0]
+        for attempt in range(2):
+            active_request = replace(
+                generation_request,
+                instruction=instruction + retry_feedback,
+                seed=seed + attempt_offset + attempt,
+            )
+            request_digest = sha256_bytes(
+                canonical_json_bytes(
+                    {
+                        "capsule": capsule.digest,
+                        "instruction": active_request.instruction,
+                        "seed": active_request.seed,
+                        "json_schema_sha256": schema_digest,
+                        "prompt_context_sha256": context_digest,
+                        "temperature": active_request.temperature,
+                        "top_p": active_request.top_p,
+                    }
+                )
+            )
+            call_id = self.kernel.begin_generation_call(transaction, request_digest)
+            response_digest: str | None = None
+            try:
+                self._boundary(f"during_zone_{zone.lower()}")
+                response = self.adapter.generate_structured(active_request, Event())
+                response_digest = sha256_bytes(response.content)
+                artifact = self.kernel.register_candidate(
+                    call_id,
+                    response.content,
+                    "application/json",
+                    "STAGE1",
+                    artifact_role="STORY",
+                    dependency_digest=capsule.digest,
+                )
+                parsed = parse_json_bytes(response.content, basename, engine_generated=True).value
+                try:
+                    validated = validate_zone_payload(parsed, zone, 1, *word_budget)
+                except ValueError as exc:
+                    message = str(exc)
+                    code = (
+                        "S164_SEGMENT_UNDER_BUDGET"
+                        if "below its word budget" in message
+                        else "S165_SEGMENT_OVER_BUDGET"
+                        if "exceeds its word budget" in message
+                        else "S162_ZONE_GENERATION_FAILURE"
+                    )
+                    raise _SegmentRejection(code, message) from exc
+                normalized_text = " ".join(str(validated["items"][0]["text"]).casefold().split())
+                prior_rows = self.kernel.db.connection.execute(
+                    "SELECT a.sha256 FROM asset_transactions t "
+                    "JOIN artifact_bindings b ON b.transaction_id=t.id AND b.role='COMMITTED' "
+                    "JOIN artifacts a ON a.id=b.artifact_id "
+                    "WHERE t.stage_run_id=? AND t.basename LIKE ? AND t.id<>?",
+                    (stage_id, f"segment-{zone.lower()}-%.json", transaction),
+                ).fetchall()
+                for prior_row in prior_rows:
+                    prior = parse_json_bytes(
+                        self.kernel.store.get_artifact_by_digest(str(prior_row["sha256"])),
+                        basename,
+                        engine_generated=True,
+                    ).value
+                    prior_text = " ".join(str(prior["items"][0]["text"]).casefold().split())
+                    if prior_text == normalized_text:
+                        raise _SegmentRejection(
+                            "S166_SEGMENT_DUPLICATE",
+                            "segment text duplicates a committed segment",
+                            str(prior_row["sha256"]),
+                        )
+                digest = response_digest
+                self.kernel.record_gate(
+                    stage_id,
+                    artifact,
+                    f"STAGE1_ZONE_{zone}_CHECKPOINT",
+                    DetectorClass.DETERMINISTIC,
+                    GateStatus.PASS,
+                    {
+                        "zone": zone,
+                        "item_index": item_index,
+                        "segment_index": segment_index,
+                        "minimum_words": word_budget[0],
+                        "maximum_words": word_budget[1],
+                        "json_schema_sha256": schema_digest,
+                        "prompt_context_sha256": context_digest,
+                        "seed": active_request.seed,
+                        "temperature": active_request.temperature,
+                        "top_p": active_request.top_p,
+                        "segment_schema_version": SEGMENT_SCHEMA_VERSION,
+                        "text_character_bounds": [
+                            SEGMENT_TEXT_MIN_CHARACTERS,
+                            SEGMENT_TEXT_MAX_CHARACTERS,
+                        ],
+                        "response_digest": digest,
+                    },
+                    sha256_bytes(self.canonical_path.read_bytes()),
+                    capsule.digest,
+                    "M5P-ZONE-1.0",
+                    capsule.digest,
+                )
+                self.kernel.finish_generation_call(
+                    call_id,
+                    CallStatus.FINISHED,
+                    digest,
+                    model_identity=response.model_identity,
+                    adapter_version=response.adapter_version,
+                    duration_ms=response.duration_ms,
+                    termination_reason=str(response.termination_reason),
+                )
+                self.kernel.commit_artifact(transaction, artifact)
+                return cast(OrderedObject, validated["items"][0])
+            except Exception as exc:
+                last_error = exc
+                retry_feedback = (
+                    "\nRetry correction: return fresh prose that is not identical to any earlier "
+                    f"segment, and keep the text strictly between {word_budget[0]} and "
+                    f"{word_budget[1]} Unicode words inclusive. Count before returning."
+                )
+                self.kernel.finish_generation_call(
+                    call_id,
+                    CallStatus.FAILED,
+                    response_digest,
+                    failure_code=(
+                        exc.code
+                        if isinstance(exc, _SegmentRejection)
+                        else "S162_ZONE_GENERATION_FAILURE"
+                    ),
+                    termination_reason=(
+                        exc.detail if isinstance(exc, _SegmentRejection) else type(exc).__name__
+                    ),
+                )
+        raise Stage1Error(
+            "S163_ZONE_RETRY_EXHAUSTED", "local zone generation retry budget exhausted", zone
         ) from last_error
 
     def _boundary(self, name: str) -> None:
@@ -407,6 +971,252 @@ class Stage1Service:
             parsed, CompileRequest(Stage.STAGE1, contract.profile, Route.CREATE)
         )
         return PromptCapsule(compiled.canonical_bytes, compiled.digest)
+
+
+class _SegmentRejection(ValueError):
+    def __init__(self, code: str, message: str, detail: str | None = None) -> None:
+        self.code = code
+        self.detail = detail or message
+        super().__init__(message)
+
+
+PRODUCTION_PHASE_ROOT_ORDER = ("schema_version", "phase", "status", "payload")
+PRODUCTION_PHASE_PAYLOAD_ORDERS = {
+    "plan": ("premise", "beats"),
+    "draft": ("script",),
+    "review": ("verdict", "findings"),
+    "repair": ("script", "resolved_findings"),
+    "serialize": ("story",),
+}
+PRODUCTION_STORY_BLUEPRINT_ORDER = ("title", "characters", "outline", "script")
+PRODUCTION_CHARACTER_ORDER = ("character_id", "name", "age", "role", "description")
+PRODUCTION_OUTLINE_ORDER = ("premise", "ending")
+PRODUCTION_SCRIPT_ITEM_ORDER = (
+    "item_id",
+    "zone",
+    "speaker_id",
+    "voice",
+    "speed",
+    "environment",
+    "text",
+)
+SEGMENT_SCHEMA_VERSION = "M5P-SEGMENT-SCHEMA-1.2"
+SEGMENT_TEXT_MIN_CHARACTERS = 120
+SEGMENT_TEXT_MAX_CHARACTERS = 230
+
+
+def _zone_item_counts(item_count: int) -> dict[str, int]:
+    """Distribute the profile minimum across canonical zones without ambiguity."""
+    quotient, remainder = divmod(item_count, len(ZONE_ORDER))
+    return {
+        zone: quotient + (1 if index < remainder else 0) for index, zone in enumerate(ZONE_ORDER)
+    }
+
+
+def _zone_word_budgets(contract: ProfileContract) -> dict[str, tuple[int, int]]:
+    minimum_total = contract.min_minutes * contract.target_wpm
+    maximum_total = contract.max_minutes * contract.target_wpm
+    minimum, minimum_remainder = divmod(minimum_total, len(ZONE_ORDER))
+    maximum, maximum_remainder = divmod(maximum_total, len(ZONE_ORDER))
+    return {
+        zone: (
+            minimum + (1 if index < minimum_remainder else 0),
+            maximum + (1 if index < maximum_remainder else 0),
+        )
+        for index, zone in enumerate(ZONE_ORDER)
+    }
+
+
+def _segment_json_schema(
+    word_budget: tuple[int, int], zone: str, item_index: int, segment_index: int
+) -> dict[str, Any]:
+    del word_budget  # word counts remain a deterministic post-generation gate
+    return {
+        "type": "object",
+        "properties": {
+            "schema_version": {"const": "1.0"},
+            "zone": {"const": zone},
+            "status": {"const": "PASS"},
+            "items": {
+                "type": "array",
+                "minItems": 1,
+                "maxItems": 1,
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "item_id": {
+                            "const": f"{zone.lower()}_{item_index:03d}_{segment_index:02d}"
+                        },
+                        "speaker_id": {"const": "narrator"},
+                        "voice": {"const": "narrator"},
+                        "speed": {"const": "1.0"},
+                        "environment": {"type": "string", "minLength": 1},
+                        "text": {
+                            "type": "string",
+                            "minLength": SEGMENT_TEXT_MIN_CHARACTERS,
+                            "maxLength": SEGMENT_TEXT_MAX_CHARACTERS,
+                        },
+                    },
+                    "required": list(ZONE_ITEM_ORDER),
+                    "additionalProperties": False,
+                },
+            },
+        },
+        "required": list(ZONE_PAYLOAD_ORDER),
+        "additionalProperties": False,
+    }
+
+
+def _production_zone_instruction(
+    zone: str,
+    expected_count: int,
+    word_budget: tuple[int, int],
+    upstream_outputs: tuple[bytes, ...],
+    *,
+    item_index: int | None = None,
+    segment_index: int | None = None,
+) -> str:
+    context = "\n".join(output.decode("utf-8") for output in upstream_outputs)
+    minimum_per_item = word_budget[0] // expected_count
+    maximum_per_item = (word_budget[1] + expected_count - 1) // expected_count
+    return (
+        f"Write only segment {segment_index or 1} of item {item_index or 1} in the {zone} "
+        "zone of the Stage 1 story offline. "
+        "Return one JSON object "
+        "with exactly these root fields in order: schema_version, zone, status, items. "
+        f'Use schema_version "1.0", zone "{zone}", status "PASS", and exactly '
+        f"{expected_count} items. The combined text of those items must contain between "
+        f"{word_budget[0]} and {word_budget[1]} Unicode words inclusive. Every text must "
+        f"contain between {minimum_per_item} and {maximum_per_item} Unicode words inclusive. "
+        "Count the words before returning the JSON. Each item must "
+        "contain exactly these fields in order: "
+        f"{', '.join(ZONE_ITEM_ORDER)}. Every item field must be a JSON string. Use a unique "
+        'non-empty item_id, speaker_id "narrator", voice "narrator", speed "1.0", a '
+        "non-empty environment, and complete prose sentences "
+        "ending in punctuation. Continue the validated story context without adding fields:\n"
+        + context
+    )
+
+
+def _production_phase_instruction(phase: str, upstream_outputs: tuple[bytes, ...]) -> str:
+    payload_order = PRODUCTION_PHASE_PAYLOAD_ORDERS[phase]
+    instruction = (
+        f"Execute the Stage 1 {phase} phase offline. Return only one JSON object. "
+        "Use exactly these root fields in this order: schema_version, phase, status, payload. "
+        f'Use schema_version "1.0", phase "{phase}", and status "PASS". '
+        f"Payload must contain exactly these fields in this order: {', '.join(payload_order)}. "
+        "All listed payload fields must be non-empty. Arrays must contain at least one item."
+    )
+    if upstream_outputs:
+        instruction += " Validated upstream phase outputs, in execution order:\n" + "\n".join(
+            output.decode("utf-8") for output in upstream_outputs
+        )
+    if phase == "serialize":
+        instruction += (
+            " The story object must contain exactly title, characters, outline, script in that "
+            "order. Each character must contain exactly character_id, name, age, role, "
+            "description. Outline must contain exactly premise, ending. Each script item must "
+            "contain exactly item_id, zone, speaker_id, voice, speed, environment, text. "
+            "Character IDs must be unique. Script item IDs must be unique, text must end with "
+            "sentence punctuation, and the script must include every zone in this order: "
+            + ", ".join(ZONE_ORDER)
+            + ". Build the script in eight contiguous zone blocks in this exact order: "
+            + ", ".join(ZONE_ORDER)
+            + ". Each zone block must contain exactly five concise complete-sentence items, "
+            + "for 40 items total; use item_id item_001 through item_040 in order. "
+            + "Use speaker_id narrator for every item, voice narrator, speed 1.0, and a "
+            + "non-empty environment. Keep every sentence relevant to the premise and do not "
+            + "omit any required object or field."
+        )
+    return instruction
+
+
+def _validate_production_phase(data: bytes, phase: str) -> OrderedObject:
+    artifact_name = f"stage1_{phase}.json"
+    parsed = parse_json_bytes(data, artifact_name, engine_generated=True).value
+    validate_field_order(parsed, PRODUCTION_PHASE_ROOT_ORDER, artifact_name)
+    assert isinstance(parsed, OrderedObject)
+    if parsed["schema_version"] != "1.0":
+        raise ValueError("production phase schema_version must be 1.0")
+    if parsed["phase"] != phase:
+        raise ValueError("production phase does not match transaction phase")
+    if parsed["status"] != "PASS":
+        raise ValueError("production phase status must be PASS")
+    payload = parsed["payload"]
+    validate_field_order(
+        payload, PRODUCTION_PHASE_PAYLOAD_ORDERS[phase], artifact_name, "$.payload"
+    )
+    for key, value in payload.items():
+        if isinstance(value, str) and value.strip():
+            continue
+        if isinstance(value, list) and value:
+            continue
+        if isinstance(value, OrderedObject) and value:
+            continue
+        raise ValueError(f"production phase payload field {key} must be non-empty")
+    if phase == "serialize":
+        _validate_story_blueprint(payload["story"], artifact_name)
+    return parsed
+
+
+def _validate_story_blueprint(value: Any, artifact_name: str) -> None:
+    validate_field_order(value, PRODUCTION_STORY_BLUEPRINT_ORDER, artifact_name, "$.payload.story")
+    assert isinstance(value, OrderedObject)
+    if not isinstance(value["title"], str) or not value["title"].strip():
+        raise ValueError("production story title must be non-empty")
+    characters = value["characters"]
+    if not isinstance(characters, list) or not characters:
+        raise ValueError("production story characters must be non-empty")
+    character_ids: set[str] = set()
+    for index, character in enumerate(characters):
+        path = f"$.payload.story.characters[{index}]"
+        validate_field_order(character, PRODUCTION_CHARACTER_ORDER, artifact_name, path)
+        assert isinstance(character, OrderedObject)
+        character_id = character["character_id"]
+        if (
+            not isinstance(character_id, str)
+            or not character_id.startswith("char_")
+            or character_id in character_ids
+        ):
+            raise ValueError("production character IDs must be unique char_ identifiers")
+        character_ids.add(character_id)
+        if not isinstance(character["age"], int) or character["age"] <= 0:
+            raise ValueError("production character age must be a positive integer")
+        for key in ("name", "role", "description"):
+            if not isinstance(character[key], str) or not character[key].strip():
+                raise ValueError(f"production character {key} must be non-empty")
+    outline = value["outline"]
+    validate_field_order(
+        outline, PRODUCTION_OUTLINE_ORDER, artifact_name, "$.payload.story.outline"
+    )
+    assert isinstance(outline, OrderedObject)
+    if any(not isinstance(outline[key], str) or not outline[key].strip() for key in outline):
+        raise ValueError("production outline fields must be non-empty strings")
+    script = value["script"]
+    if not isinstance(script, list) or not script:
+        raise ValueError("production story script must be non-empty")
+    item_ids: set[str] = set()
+    zone_ranks: list[int] = []
+    for index, item in enumerate(script):
+        path = f"$.payload.story.script[{index}]"
+        validate_field_order(item, PRODUCTION_SCRIPT_ITEM_ORDER, artifact_name, path)
+        assert isinstance(item, OrderedObject)
+        item_id = item["item_id"]
+        if not isinstance(item_id, str) or not item_id or item_id in item_ids:
+            raise ValueError("production script item IDs must be unique")
+        item_ids.add(item_id)
+        zone = item["zone"]
+        if zone not in ZONE_ORDER:
+            raise ValueError("production script zone is invalid")
+        zone_ranks.append(ZONE_ORDER.index(zone))
+        text = item["text"]
+        if not isinstance(text, str) or not text.rstrip().endswith((".", "!", "?")):
+            raise ValueError("production script text must be a complete sentence")
+        for key in ("speaker_id", "voice", "speed", "environment"):
+            if not isinstance(item[key], str) or not item[key].strip():
+                raise ValueError(f"production script {key} must be non-empty")
+    if zone_ranks != sorted(zone_ranks) or set(zone_ranks) != set(range(len(ZONE_ORDER))):
+        raise ValueError("production script must contain every zone in canonical order")
 
 
 def _build_story(
@@ -569,6 +1379,7 @@ def _build_report(
     story_bytes: bytes,
     assets: OrderedDict[str, bytes],
     contract: ProfileContract,
+    quality_evidence: dict[str, Any] | None = None,
 ) -> OrderedDict[str, Any]:
     script = story["script"]
     story_digest = sha256_bytes(story_bytes)
@@ -590,6 +1401,32 @@ def _build_report(
             violations=[],
         ),
         failure_reason=None,
+    )
+    quality_method = (
+        "independent local semantic evidence bound to final script and character assets"
+        if quality_evidence is not None
+        else "mock semantic evidence bound to final digest"
+    )
+    quality_score = (
+        quality_evidence["quality"]["final_story_quality_score"]
+        if quality_evidence is not None
+        else 9
+    )
+    progression_score = (
+        quality_evidence["quality"]["progression_score"] if quality_evidence is not None else 9
+    )
+    engagement_score = (
+        quality_evidence["engagement"]["engagement_score"] if quality_evidence is not None else 9
+    )
+    quality_dimensions = (
+        list(quality_evidence["quality"]["dimension_scores"])
+        if quality_evidence is not None
+        else [2] * 8
+    )
+    engagement_dimensions = (
+        list(quality_evidence["engagement"]["dimension_scores"])
+        if quality_evidence is not None
+        else [2] * 5
     )
     return OrderedDict(
         schema_version="2.3",
@@ -636,24 +1473,24 @@ def _build_report(
             locators=[],
         ),
         quality=OrderedDict(
-            dimension_scores=[2] * 8,
-            quality_raw_score=16,
-            final_story_quality_score=9,
-            progression_score=9,
-            scoring_method="mock semantic evidence bound to final digest",
+            dimension_scores=quality_dimensions,
+            quality_raw_score=sum(quality_dimensions),
+            final_story_quality_score=quality_score,
+            progression_score=progression_score,
+            scoring_method=quality_method,
             evidence_locators=["$.script"],
         ),
         engagement=OrderedDict(
-            dimension_scores=[2] * 5,
-            engagement_raw_score=10,
-            engagement_score=9,
+            dimension_scores=engagement_dimensions,
+            engagement_raw_score=sum(engagement_dimensions),
+            engagement_score=engagement_score,
             opening_curiosity_seconds=30,
             audience_question_open_count=1,
             audience_question_overdue_count=0,
             flat_scene_count=0,
             information_only_reveal_count=0,
             engagement_cold_reader_status="PASS",
-            scoring_method="mock semantic evidence bound to final digest",
+            scoring_method=quality_method,
             evidence_locators=["$.script"],
         ),
         gates=[gate],

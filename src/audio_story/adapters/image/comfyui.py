@@ -185,6 +185,17 @@ class ComfyUIImageAdapter(LocalImageAdapter):
             )
             workflow["5"]["inputs"]["seed"] = request.seed
             workflow["7"]["inputs"]["filename_prefix"] = Path(request.basename).stem
+            context = request.commitment_context or {}
+            positive_prompt = context.get("positive_prompt")
+            negative_prompt = context.get("negative_prompt")
+            if positive_prompt is not None:
+                if not isinstance(positive_prompt, str) or not positive_prompt.strip():
+                    raise ImageAdapterError("IMG016_PROMPT_INVALID", "positive prompt is invalid")
+                workflow["2"]["inputs"]["text"] = positive_prompt
+            if negative_prompt is not None:
+                if not isinstance(negative_prompt, str) or not negative_prompt.strip():
+                    raise ImageAdapterError("IMG016_PROMPT_INVALID", "negative prompt is invalid")
+                workflow["3"]["inputs"]["text"] = negative_prompt
         except ImageAdapterError:
             raise
         except (OSError, json.JSONDecodeError, KeyError, TypeError) as exc:

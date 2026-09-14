@@ -106,13 +106,25 @@ class LlamaCppAdapter(LocalLLMAdapter):
         if cancellation.is_set():
             raise LLMAdapterError("LLM004_CANCELLED", TerminationReason.CANCELLED)
         started = time.monotonic()
-        payload = {
-            "prompt": request.capsule.canonical_bytes.decode("utf-8"),
-            "instruction": request.instruction,
+        prompt = (
+            (request.prompt_context or request.capsule.canonical_bytes).decode("utf-8")
+            + "\n\n<|im_start|>user\n"
+            + request.instruction
+            + "\n<|im_end|>\n<|im_start|>assistant\n"
+        )
+        payload: dict[str, Any] = {
+            "prompt": prompt,
             "n_predict": request.max_output_tokens,
             "seed": request.seed,
-            "json_mode": json_mode,
         }
+        if request.temperature is not None:
+            payload["temperature"] = request.temperature
+        if request.top_p is not None:
+            payload["top_p"] = request.top_p
+        if json_mode:
+            schema = request.json_schema or {"type": "object"}
+            _validate_local_json_schema(schema)
+            payload["json_schema"] = schema
         if self.config.endpoint is not None:
             value = self._http_json("POST", "/completion", payload)
             if cancellation.is_set():
@@ -121,8 +133,8 @@ class LlamaCppAdapter(LocalLLMAdapter):
             if not isinstance(content, str):
                 raise LLMAdapterError("LLM008_TRUNCATED_OUTPUT", "missing completion content")
             model = str(value.get("model", "llama.cpp-local"))
-            reason = str(value.get("stop_reason", "COMPLETED"))
-            if reason == "length":
+            reason = str(value.get("stop_reason", value.get("stop_type", "COMPLETED")))
+            if reason in {"length", "limit"}:
                 raise LLMAdapterError("LLM008_TRUNCATED_OUTPUT", "backend reached output limit")
             output = content.encode("utf-8")
         else:
@@ -186,3 +198,16 @@ class LlamaCppAdapter(LocalLLMAdapter):
             raise LLMAdapterError("LLM006_BACKEND_FAILURE", "local process failed") from exc
         finally:
             self.unload()
+
+
+def _validate_local_json_schema(schema: dict[str, Any]) -> None:
+    if schema.get("type") != "object":
+        raise LLMAdapterError("LLM015_JSON_SCHEMA", "structured schema root must be object")
+    try:
+        encoded = json.dumps(schema, sort_keys=True, separators=(",", ":"))
+    except (TypeError, ValueError) as exc:
+        raise LLMAdapterError("LLM015_JSON_SCHEMA", "schema is not JSON serializable") from exc
+    if len(encoded) > 65536 or '"$ref"' in encoded:
+        raise LLMAdapterError(
+            "LLM015_JSON_SCHEMA", "schema refs or oversized schemas are forbidden"
+        )
