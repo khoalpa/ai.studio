@@ -22,7 +22,7 @@ def test_every_schema_has_valid_and_three_invalid_fixtures(name: str) -> None:
     )
     valid = parse_json_bytes(source.encode(), name).value
     if spec.root_order is None:
-        assert validate_schema(valid, name, spec.phases[0], name) == "NOT_VERIFIED"
+        assert validate_schema(valid, name, spec.phases[0], name) == spec.implementation_status
     else:
         assert validate_schema(valid, name, spec.phases[0], name) == "IMPLEMENTED"
     invalid = [b"{}", b'{"schema_version":"wrong"}', b"[]"]

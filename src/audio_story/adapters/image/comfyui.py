@@ -178,8 +178,13 @@ class ComfyUIImageAdapter(LocalImageAdapter):
         try:
             workflow_bytes = self.config.workflow_path.read_bytes()
             workflow = json.loads(workflow_bytes)
-            if hashlib.sha256(workflow_bytes).hexdigest() != request.workflow_digest:
-                raise ImageAdapterError("IMG013_WORKFLOW_DIGEST", "workflow digest mismatch")
+            actual_digest = hashlib.sha256(workflow_bytes).hexdigest()
+            if actual_digest != request.workflow_digest:
+                raise ImageAdapterError(
+                    "IMG013_WORKFLOW_DIGEST",
+                    "workflow digest mismatch "
+                    f"expected={request.workflow_digest} actual={actual_digest}",
+                )
             workflow["4"]["inputs"].update(
                 width=request.requested_width, height=request.requested_height, batch_size=1
             )

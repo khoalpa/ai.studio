@@ -16,4 +16,8 @@ The migration runner creates `schema_migrations(version, checksum, applied_at)` 
 
 Migration `002_llm_call_metadata.sql` adds `model_identity`, `adapter_version`, `duration_ms` and `termination_reason` to `generation_calls`. These fields preserve M4 execution provenance without persisting prompt or response bodies.
 
-Connections enable `foreign_keys`, WAL and a configurable busy timeout. Application transactions use `BEGIN IMMEDIATE` by default. Business transitions remain in Python rather than triggers. Backup/restore packaging is deferred to M11; until then, a consistent manual backup must include the database plus WAL/SHM state or be taken after closing the kernel.
+Connections enable `foreign_keys`, WAL and a configurable busy timeout. Application transactions use `BEGIN IMMEDIATE` by default. Business transitions remain in Python rather than triggers.
+
+M11 backup uses SQLite's online Backup API and therefore never copies live WAL
+or SHM files. Restore validates the recorded migration versions and checksums
+against the exact local migration set before publishing a staged workspace.

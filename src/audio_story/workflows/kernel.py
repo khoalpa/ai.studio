@@ -21,6 +21,7 @@ from audio_story.domain.state import (
 )
 from audio_story.domain.state_machine import transition_stage, transition_workflow
 from audio_story.persistence import Database
+from audio_story.persistence.migrations import migration_directory
 from audio_story.validation.canonical import canonical_json_bytes, digest_json, sha256_bytes
 
 
@@ -55,8 +56,9 @@ class WorkflowKernel:
     def __init__(self, workspace: Path, *, busy_timeout_ms: int = 5_000) -> None:
         self.workspace = workspace.resolve()
         self.workspace.mkdir(parents=True, exist_ok=True)
-        migrations = Path(__file__).parents[3] / "migrations"
-        self.db = Database(self.workspace / "runtime.sqlite3", migrations, busy_timeout_ms)
+        self.db = Database(
+            self.workspace / "runtime.sqlite3", migration_directory(), busy_timeout_ms
+        )
         self.store = ArtifactStore(self.workspace, self.db.connection)
 
     def close(self) -> None:

@@ -28,9 +28,13 @@ audio-story-validate = "audio_story.validation.validate_story_runtime:main"
 [tool.hatch.build.targets.wheel]
 packages = ["src/audio_story"]
 
+[tool.hatch.build.targets.wheel.force-include]
+"migrations" = "audio_story/migrations"
+
 [tool.ruff]
 target-version = "py311"
 line-length = 100
+extend-exclude = [".docx-render-*", "artifacts"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM"]
@@ -44,6 +48,11 @@ select = ["E", "F", "I", "UP", "B", "SIM"]
 python_version = "3.11"
 strict = true
 files = ["src"]
+follow_imports_for_stubs = true
+
+[[tool.mypy.overrides]]
+module = ["numpy", "numpy.*"]
+follow_imports = "skip"
 
 [tool.pytest.ini_options]
 addopts = "--strict-config --strict-markers --cov=audio_story --cov-branch --cov-report=term-missing"

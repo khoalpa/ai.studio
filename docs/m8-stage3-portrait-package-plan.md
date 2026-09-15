@@ -28,8 +28,9 @@ the Stage 4-only `PCF001` finding.
 - Portrait basenames match the exact ten-name Stage 2 ZONE order.
 - Every output is one final-purpose 1080x1920 PNG, orientation `PORTRAIT`, with
   one logical transaction and one authoritative commit.
-- `introduction.png` is the portrait pilot. Remaining assets execute only after
-  its identity, crop, anatomy, luma and cross-orientation checks pass.
+- The portrait pilot is the deterministic winner of the canonical risk-weight
+  calculation. Remaining assets execute only after its identity, crop,
+  anatomy, luma and cross-orientation checks pass.
 - Landscape assets are references and immutable package members; they are
   never regenerated, resized or rewritten during CREATE.
 

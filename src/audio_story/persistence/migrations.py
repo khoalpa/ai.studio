@@ -11,6 +11,16 @@ class MigrationError(RuntimeError):
     code = "RK002_MIGRATION_CHECKSUM_MISMATCH"
 
 
+def migration_directory() -> Path:
+    """Locate packaged migrations, with a source-checkout fallback for editable installs."""
+    packaged = Path(__file__).parents[1] / "migrations"
+    checkout = Path(__file__).parents[3] / "migrations"
+    for candidate in (packaged, checkout):
+        if any(candidate.glob("[0-9][0-9][0-9]_*.sql")):
+            return candidate
+    raise MigrationError("runtime migration resources are missing")
+
+
 def apply_migrations(connection: sqlite3.Connection, directory: Path) -> None:
     connection.execute(
         "CREATE TABLE IF NOT EXISTS schema_migrations (version TEXT PRIMARY KEY, checksum TEXT NOT NULL, applied_at TEXT NOT NULL)"
