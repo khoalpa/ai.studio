@@ -135,6 +135,34 @@ def test_stage1_job_runs_to_persisted_package(tmp_path: Path) -> None:
         runner.close()
 
 
+def test_stage1_package_derives_missing_series_from_story_content(tmp_path: Path) -> None:
+    workspace = tmp_path / "workspace"
+    runner = StudioCommandRunner(workspace, CANONICAL)
+    try:
+        submitted = runner.submit_stage1(
+            {
+                "profile": "YOUTH_SAFE",
+                "language": "vi",
+                "duration_minutes": 12,
+                "seed": 7,
+                "title": "Chuyến tàu đêm",
+            }
+        )
+        deadline = time.monotonic() + 20
+        job = runner.get_job(str(submitted["id"]))
+        while job["status"] in {"QUEUED", "RUNNING"} and time.monotonic() < deadline:
+            time.sleep(0.02)
+            job = runner.get_job(str(submitted["id"]))
+
+        assert job["status"] == "PASS"
+        with zipfile.ZipFile(str(job["package_path"])) as archive:
+            meta = json.loads(archive.read("story.json"))["meta"]
+        assert meta["series"] == "Những Chuyện Về Lựa Chọn"
+        assert meta["series"] != meta["title"]
+    finally:
+        runner.close()
+
+
 def test_missing_job_and_running_job_policy(tmp_path: Path) -> None:
     runner = StudioCommandRunner(tmp_path / "workspace", CANONICAL)
     try:

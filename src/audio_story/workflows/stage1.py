@@ -69,6 +69,7 @@ from audio_story.workflows.stage1_package import (
     character_set_digest,
     mock_character_png,
 )
+from audio_story.workflows.stage1_series_title import resolve_series_title
 from audio_story.workflows.stage1_zone_generation import (
     ZONE_ITEM_ORDER,
     ZONE_PAYLOAD_ORDER,
@@ -1737,11 +1738,16 @@ def _build_story(
     ):
         commitment[key] = sha256_bytes(canonical_json_bytes(source))
     commitment["commitment_digest_sha256"] = sha256_bytes(canonical_json_bytes(commitment))
+    outline = OrderedDict(
+        (zone.lower(), f"{zone.title()}: một lựa chọn nhỏ tạo hậu quả có ý nghĩa.")
+        for zone in ZONE_ORDER
+    )
+    series = resolve_series_title(request.series, outline, script, request.language)
     story = OrderedDict(
         schema_version="2.3",
         meta=OrderedDict(
             title=request.title,
-            series=request.series or request.title,
+            series=series,
             episode=request.episode,
             author="Katarina",
             channel=contract.channel,
@@ -1763,10 +1769,7 @@ def _build_story(
             story_quality_commitment=commitment,
         ),
         characters=characters,
-        outline=OrderedDict(
-            (zone.lower(), f"{zone.title()}: một lựa chọn nhỏ tạo hậu quả có ý nghĩa.")
-            for zone in ZONE_ORDER
-        ),
+        outline=outline,
         script=script,
     )
     return story, assets

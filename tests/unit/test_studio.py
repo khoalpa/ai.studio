@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import pytest
@@ -106,6 +107,44 @@ def test_snapshot_projects_transactions_gates_and_events(tmp_path: Path) -> None
         kernel.close()
 
 
+def test_snapshot_uses_committed_story_metadata_for_workspace_heading(tmp_path: Path) -> None:
+    kernel = WorkflowKernel(tmp_path / "workspace")
+    try:
+        workflow_id = kernel.create_workflow("YOUTH_SAFE", "STAGE1", "CREATE", DIGEST, DIGEST)
+        stage_id = kernel.start_stage(workflow_id, "STAGE1", CAPSULE)
+        transaction_id = kernel.get_or_create_transaction(stage_id, "TEXT", "story.json")
+        call_id = kernel.begin_generation_call(transaction_id, DIGEST)
+        story = json.dumps(
+            {
+                "meta": {
+                    "title": "Tên truyện thật",
+                    "series": "Tủ sách mùa hạ",
+                    "episode": "7",
+                }
+            }
+        ).encode("utf-8")
+        artifact_id = kernel.register_candidate(
+            call_id, story, "application/json", "STAGE1", "STORY"
+        )
+        kernel.finish_generation_call(call_id, CallStatus.FINISHED, DIGEST)
+        kernel.commit_artifact(transaction_id, artifact_id)
+
+        snapshot = StudioSnapshotService(kernel).latest()
+
+        assert snapshot["story"] == {
+            "title": "Tên truyện thật",
+            "series": "Tủ sách mùa hạ",
+            "episode": "7",
+        }
+        javascript = (Path(__file__).parents[2] / "ui" / "dist" / "app.js").read_text(
+            encoding="utf-8"
+        )
+        assert "setText('.page-heading h1', story.title);" in javascript
+        assert "setText('.eyebrow span:not(.episode-code)', story.series);" in javascript
+    finally:
+        kernel.close()
+
+
 def test_server_rejects_non_loopback_binding(tmp_path: Path) -> None:
     ui = tmp_path / "ui"
     ui.mkdir()
@@ -138,9 +177,7 @@ def test_workspace_instance_lock_reclaims_stale_owner(tmp_path: Path) -> None:
     workspace = tmp_path / "workspace"
     workspace.mkdir()
     lock_path = workspace / ".audio-story-studio.lock"
-    lock_path.write_text(
-        '{"pid":99999999,"token":"stale","workspace":"stale"}', encoding="utf-8"
-    )
+    lock_path.write_text('{"pid":99999999,"token":"stale","workspace":"stale"}', encoding="utf-8")
 
     lock = StudioInstanceLock.acquire(workspace)
     try:

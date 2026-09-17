@@ -22,6 +22,7 @@ from audio_story.validation.stage1 import (
 from audio_story.workflows.image_transaction import ImageTransactionResult
 from audio_story.workflows.kernel import WorkflowKernel
 from audio_story.workflows.stage1_package import PROMPT_VERSION
+from audio_story.workflows.stage1_series_title import resolve_series_title
 
 
 @dataclass(frozen=True, slots=True)
@@ -83,12 +84,13 @@ def materialize_production_story(
         )
         materialized_characters.append(value)
     script = blueprint["script"]
+    series = resolve_series_title(request.series, blueprint["outline"], script, request.language)
     commitment = _unverified_commitment(script, contract)
     story = OrderedDict(
         schema_version="2.3",
         meta=OrderedDict(
             title=request.title,
-            series=request.series or request.title,
+            series=series,
             episode=request.episode,
             author="Katarina",
             channel=contract.channel,

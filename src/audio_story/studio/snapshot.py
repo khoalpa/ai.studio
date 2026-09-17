@@ -50,6 +50,7 @@ class StudioSnapshotService:
             )
         ]
         current_gates = self._current_gates(connection, workflow_id)
+        story = self._story_metadata(connection, workflow_id)
         return {
             "schema_version": "1.0",
             "mode": "LIVE",
@@ -64,12 +65,40 @@ class StudioSnapshotService:
                 "created_at": str(workflow["created_at"]),
                 "updated_at": str(workflow["updated_at"]),
             },
+            "story": story,
             "stages": stages,
             "pipeline_stages": self._pipeline_stages(connection),
             "gates": current_gates,
             "gate_summary": self._gate_summary(current_gates),
             "events": events,
         }
+
+    def _story_metadata(
+        self, connection: sqlite3.Connection, workflow_id: str
+    ) -> dict[str, str] | None:
+        """Read display metadata from the committed Story artifact, never UI defaults."""
+        row = connection.execute(
+            "SELECT a.sha256 FROM stage_runs s "
+            "JOIN asset_transactions t ON t.stage_run_id=s.id "
+            "JOIN artifact_bindings b ON b.transaction_id=t.id AND b.role='COMMITTED' "
+            "JOIN artifacts a ON a.id=b.artifact_id "
+            "WHERE s.workflow_id=? AND s.stage='STAGE1' AND t.basename='story.json' "
+            "ORDER BY t.updated_at DESC,t.id DESC LIMIT 1",
+            (workflow_id,),
+        ).fetchone()
+        if row is None:
+            return None
+        try:
+            story = json.loads(self._kernel.store.get_artifact_by_digest(str(row["sha256"])))
+            meta = story["meta"]
+        except (KeyError, TypeError, json.JSONDecodeError):
+            return None
+        if not isinstance(meta, dict):
+            return None
+        fields = {key: meta.get(key) for key in ("title", "series", "episode")}
+        if not all(isinstance(value, str) and value.strip() for value in fields.values()):
+            return None
+        return {key: str(value) for key, value in fields.items()}
 
     def _stage(self, connection: sqlite3.Connection, row: sqlite3.Row) -> dict[str, Any]:
         stage_id = str(row["id"])
@@ -173,6 +202,7 @@ class StudioSnapshotService:
             "mode": "EMPTY",
             "workspace": self.workspace,
             "workflow": None,
+            "story": None,
             "stages": [],
             "pipeline_stages": [],
             "gates": [],
