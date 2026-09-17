@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "FAREWELL",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "farewell_005_03",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "trong căn phòng nhỏ, ánh sáng dịu nhẹ",
+      "text": "Những cảm xúc nhỏ cùng nhau quyết định trang trí thêm cho căn phòng, tạo nên một không gian ấm áp."
+    }
+  ]
+}

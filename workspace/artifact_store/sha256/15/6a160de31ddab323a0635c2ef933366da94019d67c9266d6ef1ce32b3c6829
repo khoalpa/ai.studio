@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "FALLING",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "falling_003_02",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "Trong ngôi nhà nhỏ",
+      "text": "Mỗi ngày trôi qua, những góc nhỏ trong ngôi nhà đều hé lộ những câu chuyện ngắn về hạnh phúc, nỗi buồn, và những tình cảm nhỏ."
+    }
+  ]
+}

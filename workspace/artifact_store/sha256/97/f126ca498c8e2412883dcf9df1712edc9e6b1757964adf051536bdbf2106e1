@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "OPENING",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "opening_003_04",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "trong ngôi nhà nhỏ xinh của những cảm xúc nhỏ",
+      "text": "Một cảm xúc nhỏ bước vào phòng khách, nhìn quanh và cảm nhận không gian xung quanh."
+    }
+  ]
+}

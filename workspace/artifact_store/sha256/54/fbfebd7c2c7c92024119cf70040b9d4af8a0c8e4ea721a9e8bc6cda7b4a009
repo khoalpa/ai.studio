@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "DEVELOPMENT",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "development_005_04",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "trong ngôi nhà nhỏ xinh",
+      "text": "Một cảm xúc nhỏ đặt chiếc đèn sách mới lên bàn học, tạo ra ánh sáng ấm áp."
+    }
+  ]
+}

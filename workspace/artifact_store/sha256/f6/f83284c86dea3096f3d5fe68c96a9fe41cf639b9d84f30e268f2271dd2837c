@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "CLIMAX",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "climax_005_02",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "trong ngôi nhà nhỏ xinh, ánh sáng mờ mờ",
+      "text": "Một cảm xúc nhỏ bước vào gian phòng mới, nhìn xung quanh, cảm nhận không gian xung quanh mình."
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "INTRODUCTION",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "introduction_004_01",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "trong không gian nhỏ xinh của ngôi nhà",
+      "text": "Một cảm xúc nhỏ nhìn quanh, thấy một góc nhà trống và quyết định ở lại."
+    }
+  ]
+}

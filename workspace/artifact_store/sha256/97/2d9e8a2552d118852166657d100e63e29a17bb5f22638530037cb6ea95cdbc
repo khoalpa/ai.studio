@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "FAREWELL",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "farewell_002_02",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "trong nhà",
+      "text": "Những góc nhỏ trong ngôi nhà này đều ẩn chứa những câu chuyện ngắn về hạnh phúc, nỗi buồn, và những tình cảm nhỏ. Cuốn sổ tay cũ được nhân vật chính mở ra, gợi nhớ về những kỷ niệm đã qua."
+    }
+  ]
+}

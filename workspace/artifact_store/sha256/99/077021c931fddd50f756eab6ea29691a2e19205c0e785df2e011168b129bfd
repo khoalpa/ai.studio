@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "OPENING",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "opening_001_01",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "Trong một góc phố nhỏ, ánh sáng yếu ớt từ cửa sổ.",
+      "text": "Ở đây, mọi lời hứa đều được vá lại và khôi phục."
+    }
+  ]
+}

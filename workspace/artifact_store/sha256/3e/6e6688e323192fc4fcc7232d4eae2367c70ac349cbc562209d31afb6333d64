@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "GREETING",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "greeting_005_03",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "秋风轻拂，街道两旁的梧桐树换上了金黄色的新装，为这古老的宅院增添了一抹温暖的色彩。",
+      "text": "秋风轻拂，街道两旁的梧桐树换上了金黄色的新装，为这古老的宅院增添了一抹温暖的色彩。"
+    }
+  ]
+}

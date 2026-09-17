@@ -15,11 +15,12 @@ from audio_story.adapters.image import (
 )
 from audio_story.domain.stage3 import Stage3Error
 from audio_story.domain.state import WorkflowStatus
-from audio_story.validation.canonical import sha256_bytes
+from audio_story.validation.canonical import canonical_json_bytes, sha256_bytes
 from audio_story.validation.stage3 import (
     QUALITY_DIMENSIONS,
     assert_inherited_bytes,
     load_stage2_package,
+    ordered_asset_manifest_digest,
     serialize_package_quality_report,
     serialize_stage3_progress,
     validate_package_quality_report_bytes,
@@ -35,6 +36,25 @@ from audio_story.workflows.stage3_planning import (
 )
 
 HASH = "a" * 64
+
+
+def test_ordered_asset_manifest_digest_uses_canonical_member_tuples_not_zip_bytes() -> None:
+    members = OrderedDict(
+        [
+            ("story.json", b"story"),
+            ("characters/char_001.png", b"character"),
+            ("story_validation.json", b"validation"),
+        ]
+    )
+    expected = sha256_bytes(
+        canonical_json_bytes([[path, sha256_bytes(data)] for path, data in members.items()])
+    )
+
+    digest = ordered_asset_manifest_digest(tuple(members), members)
+
+    assert digest == expected
+    with pytest.raises(Stage3Error, match="M8A110_ORDERED_MEMBER_TUPLES"):
+        ordered_asset_manifest_digest(("workflow_manifest.json",), members)
 
 
 def _component() -> OrderedDict[str, object]:

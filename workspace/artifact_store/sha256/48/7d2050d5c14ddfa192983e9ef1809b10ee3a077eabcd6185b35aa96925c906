@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "ENDING",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "ending_002_03",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "trong nhà",
+      "text": "Những câu chuyện nhỏ ấy, dù là hạnh phúc hay nỗi buồn, đều để lại dấu ấn trong tâm trí mỗi người."
+    }
+  ]
+}

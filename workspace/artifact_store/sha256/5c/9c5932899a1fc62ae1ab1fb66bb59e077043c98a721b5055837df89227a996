@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "GREETING",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "greeting_004_04",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "nhà nhỏ xinh của những cảm xúc nhỏ",
+      "text": "Một bó hoa nhỏ được đặt xuống, tạo ra một làn gió tươi mới."
+    }
+  ]
+}

@@ -45,6 +45,35 @@ PACKAGE_QUALITY_ROOT = (
     "recommendations",
     "validation",
 )
+
+
+def ordered_asset_manifest_digest(member_paths: Sequence[str], members: Mapping[str, bytes]) -> str:
+    """Digest canonical package-member tuples, never the ZIP container.
+
+    The report is self-referential if it includes itself, and a ZIP digest
+    changes with container metadata/compression.  The Stage 3 identity is
+    therefore the ordered ``[relative_path, exact_member_sha256]`` projection
+    of every final member except the workflow manifest and quality report.
+    """
+    paths = tuple(member_paths)
+    excluded = {"workflow_manifest.json", "package_quality_report.json"}
+    if any(path in excluded for path in paths):
+        raise Stage3Error(
+            "M8A110_ORDERED_MEMBER_TUPLES",
+            "ordered asset manifest must exclude manifest and quality report",
+            "package_identity.ordered_asset_manifest_digest_sha256",
+        )
+    if len(paths) != len(set(paths)) or any(path not in members for path in paths):
+        raise Stage3Error(
+            "M8A110_ORDERED_MEMBER_TUPLES",
+            "ordered asset manifest paths must be unique canonical package members",
+            "package_identity.ordered_asset_manifest_digest_sha256",
+        )
+    return sha256_bytes(
+        canonical_json_bytes([[path, sha256_bytes(members[path])] for path in paths])
+    )
+
+
 PACKAGE_IDENTITY_ROOT = (
     "title",
     "active_profile",

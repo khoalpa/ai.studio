@@ -8,7 +8,7 @@ from audio_story.persistence.migrations import migration_directory
 
 def test_source_checkout_migrations_are_available() -> None:
     directory = migration_directory()
-    assert len(list(directory.glob("[0-9][0-9][0-9]_*.sql"))) == 8
+    assert len(list(directory.glob("[0-9][0-9][0-9]_*.sql"))) == 9
 
 
 def test_wheel_configuration_includes_runtime_migrations() -> None:

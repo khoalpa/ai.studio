@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "OPENING",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "opening_002_03",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "nơi đây, mọi thứ đều mang một vẻ đẹp riêng biệt, từ màu sắc đến cách trang trí nội thất",
+      "text": "Hồng Nhung bước vào phòng khách, ánh sáng yếu ấm lên khuôn mặt."
+    }
+  ]
+}

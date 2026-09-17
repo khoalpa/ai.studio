@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "GREETING",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "greeting_002_03",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "trong ngôi nhà nhỏ",
+      "text": "Các nhân vật bước vào phòng khách, nơi có chiếc ghế trống cạnh cửa sổ, gợi lên câu hỏi: 'Ai đã ngồi ở đây?'"
+    }
+  ]
+}

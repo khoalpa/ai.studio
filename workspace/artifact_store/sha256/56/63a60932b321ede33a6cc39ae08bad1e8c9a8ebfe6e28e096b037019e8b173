@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "INTRODUCTION",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "introduction_005_01",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "Trong ngôi nhà nhỏ xinh, một cảm xúc nhỏ bước vào phòng mới của mình.",
+      "text": "Cảm xúc này bắt đầu sắp xếp đồ đạc và trang trí phòng mới."
+    }
+  ]
+}

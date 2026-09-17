@@ -20,6 +20,7 @@ from audio_story.validation.stage1 import ordered_json_bytes
 from audio_story.validation.stage3 import (
     QUALITY_DIMENSIONS,
     assert_inherited_bytes,
+    ordered_asset_manifest_digest,
     serialize_package_quality_report,
     validate_package_quality_report_bytes,
 )
@@ -223,11 +224,14 @@ def _build_report(
         for item in source.story["characters"]
     )
     registry_digest = sha256_bytes(canonical_json_bytes(list(QUALITY_DIMENSIONS)))
-    asset_manifest_digest = sha256_bytes(
-        canonical_json_bytes(
-            [[path, sha256_bytes(data)] for path, data in [*landscape.items(), *portraits.items()]]
-        )
+    report_member_paths = tuple(
+        path
+        for path in source.final_package_file_set
+        if path not in {"workflow_manifest.json", "package_quality_report.json"}
     )
+    report_members = OrderedDict(source.members)
+    report_members.update(portraits)
+    asset_manifest_digest = ordered_asset_manifest_digest(report_member_paths, report_members)
     dimensions = []
     measurements = []
     for dimension in QUALITY_DIMENSIONS:
@@ -405,6 +409,24 @@ def _reopen(
             if (root / name).read_bytes() != data:
                 raise Stage3Error("M8D021_REOPEN_BYTES", "archive member mismatch", name)
         validate_package_quality_report_bytes((root / "package_quality_report.json").read_bytes())
+        report = json.loads((root / "package_quality_report.json").read_bytes())
+        canonical_member_paths = tuple(
+            path
+            for path in source.final_package_file_set
+            if path not in {"workflow_manifest.json", "package_quality_report.json"}
+        )
+        expected_asset_manifest_digest = ordered_asset_manifest_digest(
+            canonical_member_paths, members
+        )
+        if (
+            report["package_identity"]["ordered_asset_manifest_digest_sha256"]
+            != expected_asset_manifest_digest
+        ):
+            raise Stage3Error(
+                "M8D023_ORDERED_MEMBER_TUPLES",
+                "quality report must bind canonical ordered member tuples, not the ZIP container",
+                "package_quality_report.json",
+            )
         parsed: dict[str, Any] = json.loads((root / "workflow_manifest.json").read_bytes())
         if parsed["parent_package_digest_sha256"] != source.package_digest_sha256:
             raise Stage3Error(

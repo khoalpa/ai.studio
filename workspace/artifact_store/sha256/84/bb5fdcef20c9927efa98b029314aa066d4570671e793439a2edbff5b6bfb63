@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "OPENING",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "opening_003_03",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "Ngôi nhà nhỏ nằm giữa hai con đường, nơi mà mỗi ngày đều có những điều mới mẻ và cảm xúc nhỏ. Dù là một căn nhà bình thường, nhưng những góc nhỏ trong ngôi nhà này đều ẩn chứa những câu chuyện ngắn về hạnh phúc, nỗi buồn, và những tình cảm nhỏ.",
+      "text": "Trong một góc nhỏ, một chiếc chìa khóa đồng lấp lánh dưới ánh sáng mặt trời, gợi lên câu hỏi: 'Chiếc chìa khóa này dẫn đến đâu?'"
+    }
+  ]
+}

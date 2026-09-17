@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "GREETING",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "greeting_002_05",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "Trong một góc yên tĩnh của thành phố",
+      "text": "Hồng Nhung mở mắt, nhận ra mùi hương quen thuộc của nhà mình."
+    }
+  ]
+}

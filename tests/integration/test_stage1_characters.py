@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 from pathlib import Path
 from threading import Event
+from typing import Any
 
 import pytest
 
@@ -83,10 +84,20 @@ def test_character_reference_is_metadata_bound_authoritative_and_idempotent(
             "1.0",
         )
 
-    config = CharacterImageConfig(_ProductionFixtureAdapter(), "d" * 64, "sdxl-local", 10, assessor)
+    prompts: list[dict[str, Any]] = []
+
+    class RecordingAdapter(_ProductionFixtureAdapter):
+        def generate_image(self, request: ImageRequest, cancellation: Event) -> ImageResponse:
+            prompts.append(request.commitment_context or {})
+            return super().generate_image(request, cancellation)
+
+    config = CharacterImageConfig(RecordingAdapter(), "d" * 64, "sdxl-local", 10, assessor)
     first = generate_character_reference(kernel, stage, character, "c" * 64, 17, config)
     second = generate_character_reference(kernel, stage, character, "c" * 64, 17, config)
     assert first.digest == second.digest
+    assert len(prompts) == 1
+    assert "exactly one person" in str(prompts[0]["positive_prompt"])
+    assert "multiple people" in str(prompts[0]["negative_prompt"])
     assert first.transaction_id == second.transaction_id
     assert first.digest is not None
     info = validate_png(
@@ -141,14 +152,64 @@ def test_character_semantic_fail_retries_with_new_seed_and_never_binds(
         CharacterImageConfig(_ProductionFixtureAdapter(), "d" * 64, "sdxl-local", 10, reject),
     )
     assert result.status == "VISUAL_GATE_FAIL"
-    assert seeds == [17, 18]
+    assert seeds == [17, 18, 19]
     assert kernel.db.connection.execute("SELECT COUNT(*) FROM artifact_bindings").fetchone()[0] == 0
     assert [
         row[0]
         for row in kernel.db.connection.execute(
             "SELECT failure_code FROM generation_calls ORDER BY attempt_index"
         )
-    ] == ["IMG018_SEMANTIC_GATE_FAIL", "IMG018_SEMANTIC_GATE_FAIL"]
+    ] == [
+        "IMG018_SEMANTIC_GATE_FAIL",
+        "IMG018_SEMANTIC_GATE_FAIL",
+        "IMG018_SEMANTIC_GATE_FAIL",
+    ]
+    kernel.close()
+
+
+def test_character_invalid_vlm_output_finishes_call_and_retries(tmp_path: Path) -> None:
+    from audio_story.studio.vlm import VlmAssessmentError
+
+    kernel = WorkflowKernel(tmp_path)
+    stage = _stage(kernel)
+    calls = 0
+
+    def assessor(data: bytes, request: ImageRequest) -> SemanticImageGateResult:
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            raise VlmAssessmentError("VLM005_INVALID_OUTPUT", "invalid model output")
+        return SemanticImageGateResult(
+            "PASS",
+            {"image_sha256": hashlib.sha256(data).hexdigest(), "person_count": 1},
+            "fixture-vlm",
+            "1.0",
+        )
+
+    result = generate_character_reference(
+        kernel,
+        stage,
+        {
+            "character_id": "char_001",
+            "name": "An",
+            "age": 30,
+            "role": "protagonist",
+            "description": "Investigator.",
+        },
+        "c" * 64,
+        17,
+        CharacterImageConfig(_ProductionFixtureAdapter(), "d" * 64, "sdxl-local", 10, assessor),
+    )
+
+    assert result.status == "AUTHORITATIVE"
+    assert calls == 2
+    rows = kernel.db.connection.execute(
+        "SELECT status,failure_code FROM generation_calls ORDER BY attempt_index"
+    ).fetchall()
+    assert [tuple(row) for row in rows] == [
+        ("FAILED", "VLM005_INVALID_OUTPUT"),
+        ("FINISHED", None),
+    ]
     kernel.close()
 
 
@@ -186,12 +247,11 @@ def test_materialize_story_binds_authority_pixels_and_passes_current_validator(
         zone = ZONE_ORDER[min(index * len(ZONE_ORDER) // 60, len(ZONE_ORDER) - 1)]
         script.append(
             {
-                "item_id": f"item_{index + 1:04d}",
                 "zone": zone,
-                "speaker_id": "NARRATOR",
-                "voice": "narrator",
+                "environment": "none",
+                "voice": "NARRATOR",
                 "speed": "NORMAL",
-                "environment": "quiet room",
+                "lang": "VI",
                 "text": " ".join(["story"] * 92) + ".",
             }
         )
@@ -207,7 +267,7 @@ def test_materialize_story_binds_authority_pixels_and_passes_current_validator(
         {
             "title": request.title,
             "characters": [character],
-            "outline": {"premise": "A mystery begins.", "ending": "Truth is established."},
+            "outline": {zone.lower(): f"{zone.title()} begins." for zone in ZONE_ORDER},
             "script": script,
         },
         [image],

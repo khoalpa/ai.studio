@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "DEVELOPMENT",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "development_002_01",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "trong ngôi nhà nhỏ xinh",
+      "text": "Một cảm xúc nhỏ tìm thấy một góc nhỏ trống và quyết định ở lại. Cảm xúc này bắt đầu sắp xếp và trang trí góc nhỏ mới của mình."
+    }
+  ]
+}

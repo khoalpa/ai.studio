@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "FAREWELL",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "farewell_004_03",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "trong ngôi nhà nhỏ xinh",
+      "text": "Một cảm xúc nhỏ ngồi trên chiếc ghế trống, nhớ về những kỷ niệm vui vẻ đã qua."
+    }
+  ]
+}

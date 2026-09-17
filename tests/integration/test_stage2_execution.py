@@ -20,6 +20,7 @@ from audio_story.workflows.stage2_gates import (
     evaluate_stage2_landscape_gates,
     require_stage2_gate_pass,
 )
+from audio_story.workflows.stage2_package import build_stage2_checkpoint
 from audio_story.workflows.stage2_planning import build_stage2_zone_plan
 
 
@@ -110,4 +111,8 @@ def test_stage2_mock_queue_resumes_and_repairs_only_failed_basename(tmp_path: Pa
         ).fetchone()[0]
         == 10
     )
+    checkpoint = tmp_path / "stage2" / "story.zip"
+    digest = build_stage2_checkpoint(kernel, stage, source, plan, passed, checkpoint)
+    assert len(digest) == 64
+    assert checkpoint.is_file()
     kernel.close()

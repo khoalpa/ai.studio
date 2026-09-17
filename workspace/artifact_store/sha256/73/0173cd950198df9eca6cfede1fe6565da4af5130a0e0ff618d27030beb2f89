@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "ENDING",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "ending_004_04",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "trong ngôi nhà nhỏ xinh",
+      "text": "Từ đó, ngôi nhà nhỏ xinh trở thành nơi trú ẩn thân thương cho tất cả những cảm xúc nhỏ, tạo nên một không gian ấm áp và gắn kết."
+    }
+  ]
+}

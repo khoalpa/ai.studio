@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "GREETING",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "greeting_001_03",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "trong nhà yên tĩnh",
+      "text": "Hồng Nhung bước vào, cảm thấy không gian ấm áp."
+    }
+  ]
+}

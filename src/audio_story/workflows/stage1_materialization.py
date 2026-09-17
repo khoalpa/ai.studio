@@ -88,8 +88,8 @@ def materialize_production_story(
         schema_version="2.3",
         meta=OrderedDict(
             title=request.title,
-            series=request.title,
-            episode="1",
+            series=request.series or request.title,
+            episode=request.episode,
             author="Katarina",
             channel=contract.channel,
             target=contract.audience,
@@ -127,6 +127,8 @@ def finalize_production_quality(
     """Validate independent semantic evidence, finalize commitment, and revalidate bytes."""
     if result.status != "PASS":
         raise ValueError("production story quality assessment did not pass")
+    if "mock" in result.model_identity.casefold() or "mock" in result.adapter_version.casefold():
+        raise ValueError("mock semantic evidence is not allowed in production")
     evidence = result.evidence
     script = story["script"]
     script_digest = final_script_digest(script)

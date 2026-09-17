@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "OPENING",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "opening_002_01",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "Trong ngôi nhà nhỏ xinh của cảm xúc",
+      "text": "Một cảm xúc nhỏ tìm thấy một góc tối và quyết định khám phá."
+    }
+  ]
+}

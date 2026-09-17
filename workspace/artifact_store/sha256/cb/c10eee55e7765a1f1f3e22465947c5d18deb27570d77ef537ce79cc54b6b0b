@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "FAREWELL",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "farewell_003_04",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "trong ngôi nhà nhỏ xinh",
+      "text": "Những cảm xúc nhỏ bước ra khỏi nhà, mang theo những kỷ niệm và tình cảm ấm áp."
+    }
+  ]
+}

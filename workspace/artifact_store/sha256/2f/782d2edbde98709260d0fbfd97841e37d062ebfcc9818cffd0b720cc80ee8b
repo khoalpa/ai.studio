@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "CLIMAX",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "climax_002_02",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "trong ngôi nhà nhỏ xinh",
+      "text": "Một cảm xúc nhỏ khác bước vào phòng trống, mang theo câu chuyện và kỷ niệm của mình, làm cho không gian thêm ấm áp và thân thiện."
+    }
+  ]
+}

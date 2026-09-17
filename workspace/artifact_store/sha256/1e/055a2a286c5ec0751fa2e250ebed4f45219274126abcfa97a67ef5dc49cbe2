@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "FAREWELL",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "farewell_005_02",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "trong ngôi nhà nhỏ xinh",
+      "text": "Mỗi cảm xúc nhỏ đều đã tìm thấy một chỗ ở, và ngôi nhà nhỏ xinh này giờ đã tràn đầy hạnh phúc và tình yêu."
+    }
+  ]
+}

@@ -33,7 +33,7 @@ def build_series_anchor(story: dict[str, Any]) -> bytes:
         series=OrderedDict(
             series_id=f"series:{sha256_bytes(str(meta['series']).encode())[:16]}",
             title=meta["series"],
-            premise=story["outline"]["premise"],
+            premise=" ".join(str(value) for value in story["outline"].values()),
             genre=meta["genre"],
             language=meta["language"],
             audience=meta["audience"],

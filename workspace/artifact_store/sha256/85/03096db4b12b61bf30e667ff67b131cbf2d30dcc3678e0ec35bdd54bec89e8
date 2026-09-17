@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "GREETING",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "greeting_004_05",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "A small street corner in a bustling city.",
+      "text": "Trong tiệm, một người đang vá lại lời hứa của một khách hàng."
+    }
+  ]
+}

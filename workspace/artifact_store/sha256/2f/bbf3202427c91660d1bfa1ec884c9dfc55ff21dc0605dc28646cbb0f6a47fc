@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "GREETING",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "greeting_002_01",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "Trong một góc yên tĩnh của thành phố, ngôi nhà nhỏ của những cảm xúc nhỏ ấm áp và yên bình.",
+      "text": "Hồng Nhung bước vào nhà, cảm thấy không gian ấm áp và yên bình."
+    }
+  ]
+}

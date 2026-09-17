@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "ENDING",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "ending_004_01",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "trong ngôi nhà nhỏ xinh của những cảm xúc",
+      "text": "Một cảm xúc nhỏ nhặt hộp gỗ, thấy ngay trong đó là một lá thư bí ẩn."
+    }
+  ]
+}

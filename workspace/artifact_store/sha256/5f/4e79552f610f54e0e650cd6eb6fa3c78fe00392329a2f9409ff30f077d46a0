@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "FALLING",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "falling_001_04",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "trong ngôi nhà nhỏ xinh",
+      "text": "Cảm xúc nhỏ dần dần cảm thấy thoải mái, hòa nhập với không gian mới."
+    }
+  ]
+}

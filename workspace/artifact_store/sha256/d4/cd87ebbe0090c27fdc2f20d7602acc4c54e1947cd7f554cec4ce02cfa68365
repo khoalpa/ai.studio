@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "FALLING",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "falling_001_01",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "trong nhà",
+      "text": "Chiếc đồng hồ dừng lại, làm cho nhân vật chính phải suy nghĩ."
+    }
+  ]
+}

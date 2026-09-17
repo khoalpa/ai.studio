@@ -126,7 +126,7 @@ def cleanup_orphan_temps(kernel: WorkflowKernel, older_than_seconds: float) -> t
     cutoff = time.time() - older_than_seconds
     removed = []
     for path in kernel.store.orphan_temps():
-        if path.stat().st_mtime <= cutoff:
+        if older_than_seconds <= 0 or path.stat().st_mtime <= cutoff:
             path.unlink()
             removed.append(path)
     return tuple(removed)

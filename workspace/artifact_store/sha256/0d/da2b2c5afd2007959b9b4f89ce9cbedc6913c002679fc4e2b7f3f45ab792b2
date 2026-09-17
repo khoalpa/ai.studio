@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "DEVELOPMENT",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "development_001_04",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "những cảm xúc nhỏ nhìn xung quanh nhà, tìm thấy một bức tranh đẹp",
+      "text": "Một cảm xúc nhỏ vẽ lên bức tranh mới, trang trí thêm cho không gian."
+    }
+  ]
+}

@@ -1,15 +1,22 @@
 from __future__ import annotations
 
 import json
+from dataclasses import replace
 from hashlib import sha256
+from io import BytesIO
 from pathlib import Path
 from threading import Event
 from urllib.request import Request
 
 import pytest
+from PIL import Image
 
 from audio_story.adapters.image import ComfyUIConfig, ImageAdapterError, ImageRequest
 from audio_story.adapters.image.comfyui import ComfyUIImageAdapter
+from audio_story.validation.images import managed_upscale_evidence, validate_png
+from audio_story.workflows.stage1_characters import bind_character_metadata
+from audio_story.workflows.stage2_commitment import bind_stage2_commitments
+from audio_story.workflows.stage3_commitment import bind_stage3_commitments
 
 
 def _workflow(tmp_path: Path) -> tuple[Path, str]:
@@ -75,7 +82,7 @@ def test_real_api_injects_digest_bound_dynamic_prompts(
     adapter = ComfyUIImageAdapter(ComfyUIConfig(workflow_path=workflow))
     monkeypatch.setattr(adapter, "_http", fake_http)
     request = _request(digest)
-    request = __import__("dataclasses").replace(
+    request = replace(
         request,
         commitment_context={
             "positive_prompt": "portrait of An",
@@ -87,6 +94,88 @@ def test_real_api_injects_digest_bound_dynamic_prompts(
     assert isinstance(prompt, dict)
     assert prompt["2"]["inputs"]["text"] == "portrait of An"
     assert prompt["3"]["inputs"]["text"] == "text, watermark"
+
+
+@pytest.mark.parametrize(
+    ("final_size", "source_size", "crop_box"),
+    [
+        ((1536, 2048), (896, 1152), [16, 0, 880, 1152]),
+        ((3840, 2160), (1536, 864), [0, 0, 1536, 864]),
+        ((1080, 1920), (768, 1344), [6, 0, 762, 1344]),
+    ],
+)
+def test_managed_generation_keeps_final_contract_and_source_evidence(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    final_size: tuple[int, int],
+    source_size: tuple[int, int],
+    crop_box: list[int],
+) -> None:
+    workflow, digest = _workflow(tmp_path)
+    source = BytesIO()
+    Image.new("RGB", source_size, (80, 120, 160)).save(source, format="PNG")
+    submitted: dict[str, object] = {}
+
+    def fake_http(request: Request, timeout: float) -> bytes:
+        if request.full_url.endswith("/prompt"):
+            submitted.update(json.loads(request.data))
+            return b'{"prompt_id":"pid"}'
+        if "/history/" in request.full_url:
+            return b'{"pid":{"outputs":{"7":{"images":[{"filename":"one.png"}]}}}}'
+        return source.getvalue()
+
+    adapter = ComfyUIImageAdapter(ComfyUIConfig(workflow_path=workflow))
+    monkeypatch.setattr(adapter, "_http", fake_http)
+    request = __import__("dataclasses").replace(
+        _request(digest), requested_width=final_size[0], requested_height=final_size[1]
+    )
+    response = adapter.generate_image(request, Event())
+    prompt = submitted["prompt"]
+    assert isinstance(prompt, dict)
+    assert prompt["4"]["inputs"]["width"] == source_size[0]
+    assert prompt["4"]["inputs"]["height"] == source_size[1]
+    info = validate_png(response.content, request.basename, expected_dimensions=final_size)
+    evidence = managed_upscale_evidence(info, final_size)
+    assert evidence is not None
+    assert evidence["crop_box"] == crop_box
+    assert evidence["source_width"] == source_size[0]
+    assert evidence["source_height"] == source_size[1]
+    if final_size == (1536, 2048):
+        bound = bind_character_metadata(
+            response.content,
+            replace(
+                request, basename="char_001.png", commitment_context={"character_id": "char_001"}
+            ),
+            response,
+        )
+        provenance = validate_png(bound, "char_001.png").metadata["audio_story"]
+        assert provenance["managed_upscale"]["source_width"] == source_size[0]
+    else:
+        context = {
+            "transaction_role": "STANDARD",
+            "transaction_index": 1,
+            "art_direction_id": "art",
+            "plan_snapshot": {},
+            "plan_digest_sha256": "a" * 64,
+            "landscape_reference": "landscape/cover.png",
+            "landscape_sha256": "b" * 64,
+            "pilot_evidence": "pilot",
+            "pilot_digest": "c" * 64,
+        }
+        active = replace(request, commitment_context=context)
+        bound = (
+            bind_stage2_commitments(response.content, active, response)
+            if final_size == (3840, 2160)
+            else bind_stage3_commitments(response.content, active, response)
+        )
+        provenance = validate_png(bound, request.basename).metadata["image_provenance_commitment"]
+        assert provenance["source_quality_tier"] == "MANAGED_UPSCALED"
+        assert provenance["source_eligibility_mode"] == "OBSERVABLE_MANAGED_UPSCALE"
+        assert provenance["source_dimensions"] == {
+            "width": source_size[0],
+            "height": source_size[1],
+        }
+        assert provenance["source_of_pixels_digest_sha256"] == evidence["source_pixels_sha256"]
 
 
 @pytest.mark.parametrize(

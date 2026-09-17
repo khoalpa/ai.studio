@@ -5,6 +5,7 @@ from __future__ import annotations
 import base64
 import contextlib
 import hashlib
+import io
 import json
 import struct
 import time
@@ -17,6 +18,8 @@ from pathlib import Path
 from threading import Event
 from typing import Any
 
+from PIL import Image, UnidentifiedImageError
+
 from audio_story.adapters.image.base import (
     ImageAdapterError,
     ImageRequest,
@@ -24,6 +27,16 @@ from audio_story.adapters.image.base import (
     LocalImageAdapter,
 )
 from audio_story.config import require_loopback_endpoint
+from audio_story.validation.errors import ValidationError
+from audio_story.validation.images import validate_png
+
+# SDXL creates the source raster near its trained pixel count. The final canvas
+# remains the exact dimensions required by each existing stage contract.
+_GENERATION_SIZES: dict[tuple[int, int], tuple[int, int, tuple[int, int, int, int]]] = {
+    (1536, 2048): (896, 1152, (16, 0, 880, 1152)),
+    (3840, 2160): (1536, 864, (0, 0, 1536, 864)),
+    (1080, 1920): (768, 1344, (6, 0, 762, 1344)),
+}
 
 
 class _RejectRedirect(urllib.request.HTTPRedirectHandler):
@@ -35,7 +48,7 @@ class _RejectRedirect(urllib.request.HTTPRedirectHandler):
 class ComfyUIConfig:
     endpoint: str = "http://127.0.0.1:8188"
     timeout_seconds: float = 120.0
-    adapter_version: str = "M6-COMFYUI-1.0"
+    adapter_version: str = "M6-COMFYUI-1.1"
     workflow_path: Path | None = None
     poll_interval_seconds: float = 0.25
 
@@ -185,9 +198,13 @@ class ComfyUIImageAdapter(LocalImageAdapter):
                     "workflow digest mismatch "
                     f"expected={request.workflow_digest} actual={actual_digest}",
                 )
-            workflow["4"]["inputs"].update(
-                width=request.requested_width, height=request.requested_height, batch_size=1
+            size_plan = _GENERATION_SIZES.get((request.requested_width, request.requested_height))
+            source_width, source_height = (
+                (request.requested_width, request.requested_height)
+                if size_plan is None
+                else size_plan[:2]
             )
+            workflow["4"]["inputs"].update(width=source_width, height=source_height, batch_size=1)
             workflow["5"]["inputs"]["seed"] = request.seed
             workflow["7"]["inputs"]["filename_prefix"] = Path(request.basename).stem
             context = request.commitment_context or {}
@@ -270,8 +287,13 @@ class ComfyUIImageAdapter(LocalImageAdapter):
             )
             if not content:
                 raise ImageAdapterError("IMG009_EMPTY_OUTPUT", "ComfyUI returned empty image")
+            managed_evidence = None
+            if size_plan is not None:
+                content, managed_evidence = _normalize_managed_image(content, request, size_plan)
             return ImageResponse(
-                _bind_png_provenance(content, request, self.config.adapter_version),
+                _bind_png_provenance(
+                    content, request, self.config.adapter_version, managed_evidence
+                ),
                 request.model_identity,
                 self.config.adapter_version,
                 int((time.monotonic() - started) * 1000),
@@ -281,20 +303,28 @@ class ComfyUIImageAdapter(LocalImageAdapter):
         raise ImageAdapterError("IMG008_TIMEOUT_OR_BACKEND", "ComfyUI generation timed out")
 
 
-def _bind_png_provenance(data: bytes, request: ImageRequest, adapter_version: str) -> bytes:
+def _bind_png_provenance(
+    data: bytes,
+    request: ImageRequest,
+    adapter_version: str,
+    managed_evidence: dict[str, Any] | None = None,
+) -> bytes:
     """Add deterministic runtime provenance without decoding or changing pixels."""
     signature = b"\x89PNG\r\n\x1a\n"
     ihdr_end = len(signature) + 25
     if len(data) < ihdr_end or not data.startswith(signature) or data[12:16] != b"IHDR":
         return data
+    metadata: dict[str, Any] = {
+        "adapter_version": adapter_version,
+        "model_identity": request.model_identity,
+        "prompt_digest": request.prompt_digest,
+        "seed": request.seed,
+        "workflow_digest": request.workflow_digest,
+    }
+    if managed_evidence is not None:
+        metadata["managed_upscale"] = managed_evidence
     payload = json.dumps(
-        {
-            "adapter_version": adapter_version,
-            "model_identity": request.model_identity,
-            "prompt_digest": request.prompt_digest,
-            "seed": request.seed,
-            "workflow_digest": request.workflow_digest,
-        },
+        metadata,
         sort_keys=True,
         separators=(",", ":"),
     ).encode()
@@ -303,3 +333,66 @@ def _bind_png_provenance(data: bytes, request: ImageRequest, adapter_version: st
     chunk = struct.pack(">I", len(body)) + kind + body
     chunk += struct.pack(">I", zlib.crc32(kind + body) & 0xFFFFFFFF)
     return data[:ihdr_end] + chunk + data[ihdr_end:]
+
+
+def _normalize_managed_image(
+    data: bytes,
+    request: ImageRequest,
+    plan: tuple[int, int, tuple[int, int, int, int]],
+) -> tuple[bytes, dict[str, Any]]:
+    source_width, source_height, crop_box = plan
+    try:
+        validate_png(data, request.basename, expected_dimensions=(source_width, source_height))
+        with Image.open(io.BytesIO(data)) as opened:
+            source = opened.convert("RGB")
+            source_pixels_sha256 = hashlib.sha256(source.tobytes()).hexdigest()
+            cropped = source.crop(crop_box)
+            normalized = cropped.resize(
+                (request.requested_width, request.requested_height), Image.Resampling.LANCZOS
+            )
+            final = _encode_rgb_png(normalized)
+    except (OSError, ValueError, UnidentifiedImageError, ValidationError) as exc:
+        raise ImageAdapterError(
+            "IMG021_MANAGED_UPSCALE_INVALID", "source image cannot be normalized"
+        ) from exc
+    validate_png(
+        final,
+        request.basename,
+        expected_dimensions=(request.requested_width, request.requested_height),
+    )
+    evidence = {
+        "source_width": source_width,
+        "source_height": source_height,
+        "source_png_sha256": hashlib.sha256(data).hexdigest(),
+        "source_pixels_sha256": source_pixels_sha256,
+        "crop_box": list(crop_box),
+        "final_width": request.requested_width,
+        "final_height": request.requested_height,
+        "method": "CENTER_CROP_LANCZOS_RGB_V1",
+    }
+    return final, evidence
+
+
+def _encode_rgb_png(image: Image.Image) -> bytes:
+    width, height = image.size
+    pixels = image.tobytes()
+    stride = width * 3
+    raw = b"".join(
+        b"\x00" + pixels[offset : offset + stride] for offset in range(0, len(pixels), stride)
+    )
+    ihdr = struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0)
+    return (
+        b"\x89PNG\r\n\x1a\n"
+        + _png_chunk(b"IHDR", ihdr)
+        + _png_chunk(b"IDAT", zlib.compress(raw, 6))
+        + _png_chunk(b"IEND", b"")
+    )
+
+
+def _png_chunk(kind: bytes, payload: bytes) -> bytes:
+    return (
+        struct.pack(">I", len(payload))
+        + kind
+        + payload
+        + struct.pack(">I", zlib.crc32(kind + payload) & 0xFFFFFFFF)
+    )

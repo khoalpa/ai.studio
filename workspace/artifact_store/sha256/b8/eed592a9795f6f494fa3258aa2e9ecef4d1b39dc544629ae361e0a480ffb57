@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "GREETING",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "greeting_003_04",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "trong nhà nhỏ xinh của cảm xúc",
+      "text": "Một cảm xúc nhỏ nhìn quanh, tìm thấy một bức tranh đẹp và quyết định treo nó ở vị trí trung tâm."
+    }
+  ]
+}

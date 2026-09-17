@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "GREETING",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "greeting_005_01",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "Nơi đây, ánh sáng yếu ấm lên khuôn mặt",
+      "text": "Hồng Nhung đặt túi xách xuống, cảm thấy mệt mỏi."
+    }
+  ]
+}

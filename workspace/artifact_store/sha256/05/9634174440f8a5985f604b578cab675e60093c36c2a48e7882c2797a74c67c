@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "INTRODUCTION",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "introduction_005_01",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "trong ngôi nhà nhỏ",
+      "text": "Chiếc ghế trống cạnh cửa sổ khiến nhân vật chính nhớ về những kỷ niệm cũ."
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "schema_version": "1.0",
+  "phase": "review",
+  "status": "PASS",
+  "payload": {
+    "verdict": "PASS",
+    "findings": [
+      {
+        "field": "premise",
+        "message": "Đúng: Câu chuyện bắt đầu ở ngôi nhà nhỏ xinh của những cảm xúc nhỏ.",
+        "severity": "ADVISORY"
+      },
+      {
+        "field": "beats",
+        "message": "Đúng: Bao gồm ba beat mô tả quá trình các cảm xúc nhỏ đến thăm và trang trí ngôi nhà.",
+        "severity": "ADVISORY"
+      }
+    ]
+  }
+}

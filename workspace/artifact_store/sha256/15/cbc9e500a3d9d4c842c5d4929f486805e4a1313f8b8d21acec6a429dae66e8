@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "FAREWELL",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "farewell_003_01",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "trong ngôi nhà nhỏ xinh của những cảm xúc nhỏ",
+      "text": "Những cảm xúc nhỏ đã tìm thấy một không gian mới để chia sẻ và gắn kết. Câu chuyện kết thúc ở đây, trong ngôi nhà nhỏ xinh của những cảm xúc nhỏ."
+    }
+  ]
+}

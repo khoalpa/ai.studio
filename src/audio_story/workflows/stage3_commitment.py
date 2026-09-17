@@ -7,7 +7,7 @@ from typing import Any, cast
 
 from audio_story.adapters.image.base import ImageRequest, ImageResponse
 from audio_story.validation.canonical import canonical_json_bytes, sha256_bytes
-from audio_story.validation.images import PngInfo, validate_png
+from audio_story.validation.images import PngInfo, managed_upscale_evidence, validate_png
 from audio_story.workflows.stage2_commitment import (
     PROVENANCE_KEY,
     REALIZATION_KEY,
@@ -23,6 +23,7 @@ def bind_stage3_commitments(data: bytes, request: ImageRequest, response: ImageR
         raise ValueError("M8C300_COMMITMENT_CONTEXT_MISSING")
     info = validate_png(data, request.basename, expected_dimensions=(1080, 1920))
     pixel_digest = decoded_pixel_digest(data, info)
+    managed = managed_upscale_evidence(info, (1080, 1920))
     reference_path = cast(str, context["landscape_reference"])
     provenance = OrderedDict(
         schema_version="2.0",
@@ -30,15 +31,20 @@ def bind_stage3_commitments(data: bytes, request: ImageRequest, response: ImageR
         orientation="PORTRAIT",
         basename=request.basename,
         transaction_id=request.transaction_id,
-        source_quality_tier="NATIVE_OR_EQUIVALENT",
-        source_eligibility_mode="OBSERVABLE_NATIVE",
+        source_quality_tier="MANAGED_UPSCALED" if managed else "NATIVE_OR_EQUIVALENT",
+        source_eligibility_mode="OBSERVABLE_MANAGED_UPSCALE" if managed else "OBSERVABLE_NATIVE",
         source_preimage_observability="OBSERVED",
         source_eligibility_gate_id="IMAGE-NATIVE-SOURCE-ELIGIBILITY-01",
         source_eligibility_gate_status="PASS",
         observability="OBSERVED",
-        source_dimensions=OrderedDict(width=1080, height=1920),
+        source_dimensions=OrderedDict(
+            width=managed["source_width"] if managed else 1080,
+            height=managed["source_height"] if managed else 1920,
+        ),
         final_dimensions=OrderedDict(width=info.width, height=info.height),
-        source_of_pixels_digest_sha256=pixel_digest,
+        source_of_pixels_digest_sha256=(
+            managed["source_pixels_sha256"] if managed else pixel_digest
+        ),
         final_file_sha256=sha256_bytes(data),
         art_direction_id=context["art_direction_id"],
         primary_reference_basename=reference_path.removeprefix("landscape/"),

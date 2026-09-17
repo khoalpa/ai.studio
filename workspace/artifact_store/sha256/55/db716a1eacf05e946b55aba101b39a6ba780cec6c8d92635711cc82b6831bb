@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "OPENING",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "opening_004_03",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "Nơi giữa hai con đường, ánh sáng ban mai rọi qua cửa sổ",
+      "text": "Chiếc ghế trống cạnh cửa sổ gợi lên câu hỏi: 'Ai đã ngồi ở đây?'"
+    }
+  ]
+}

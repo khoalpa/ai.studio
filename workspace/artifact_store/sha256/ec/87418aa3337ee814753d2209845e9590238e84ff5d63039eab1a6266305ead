@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "CLIMAX",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "climax_003_03",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "trong ngôi nhà nhỏ xinh",
+      "text": "Cảm xúc nhỏ quyết định chia sẻ câu chuyện và kỷ niệm của mình với mọi người. Họ mở cửa phòng, rực rỡ ánh sáng, và những câu chuyện bắt đầu lan tỏa."
+    }
+  ]
+}

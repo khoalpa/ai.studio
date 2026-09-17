@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "INTRODUCTION",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "introduction_001_03",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "trong ngôi nhà nhỏ xinh của những cảm xúc nhỏ",
+      "text": "Những cảm xúc nhỏ khác bắt đầu đến thăm ngôi nhà, chia sẻ câu chuyện và kỷ niệm của mình. Họ tạo ra một không gian thân thiện và gắn kết."
+    }
+  ]
+}

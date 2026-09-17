@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "OPENING",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "opening_004_01",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "Ngôi nhà nhỏ nằm giữa hai con đường, nơi mà mỗi ngày đều có những điều mới mẻ và cảm xúc nhỏ.",
+      "text": "Trong một góc nhỏ, cánh cửa ngăn kéo khóa kín gợi ra câu hỏi: 'Có điều gì ẩn giấu trong đây không?'"
+    }
+  ]
+}

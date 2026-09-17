@@ -47,7 +47,7 @@ def _zone_response(
                     "speed": "1.0",
                     "environment": "quiet room",
                     "text": " ".join(
-                        [f"{prefix}Sentence{index + 1}"]
+                        [f"đ{prefix}Sentence{index + 1}"]
                         + ["story"] * (per_item + (1 if index < remainder else 0) - 1)
                     )
                     + ".",
@@ -244,6 +244,27 @@ def test_production_path_commits_structured_phases_then_waits_for_m6(
             for item in range(8 if zone_index < 4 else 7)
             for segment in range(3)
         } | {("serialize.json", "COMMITTED")}
+        serialized_row = kernel.db.connection.execute(
+            "SELECT a.sha256 FROM asset_transactions t "
+            "JOIN artifact_bindings b ON b.transaction_id=t.id AND b.role='COMMITTED' "
+            "JOIN artifacts a ON a.id=b.artifact_id WHERE t.basename='serialize.json'"
+        ).fetchone()
+        serialized = json.loads(kernel.store.get_artifact_by_digest(serialized_row["sha256"]))
+        story = serialized["payload"]["story"]
+        assert list(story["outline"]) == [zone.lower() for zone in ZONE_ORDER]
+        assert "premise" not in story["outline"]
+        assert list(story["script"][0]) == [
+            "zone",
+            "environment",
+            "voice",
+            "speed",
+            "lang",
+            "text",
+        ]
+        assert story["script"][0]["environment"] == "none"
+        assert story["script"][0]["voice"] == "NARRATOR"
+        assert story["script"][0]["speed"] == "NORMAL"
+        assert story["script"][0]["lang"] == "VI"
         assert (
             kernel.db.connection.execute(
                 "SELECT COUNT(*) FROM gate_results WHERE gate_id LIKE 'STAGE1_%_CHECKPOINT' "
@@ -263,8 +284,8 @@ def test_production_path_commits_structured_phases_then_waits_for_m6(
             "SELECT evidence_json FROM gate_results "
             "WHERE gate_id='STAGE1_ZONE_GREETING_CHECKPOINT' LIMIT 1"
         ).fetchone()[0]
-        assert '"segment_schema_version":"M5P-SEGMENT-SCHEMA-1.2"' in evidence
-        assert '"text_character_bounds":[120,230]' in evidence
+        assert '"segment_schema_version":"M5P-SEGMENT-SCHEMA-1.3"' in evidence
+        assert '"text_character_bounds":[1,390]' in evidence
     finally:
         kernel.close()
 
@@ -326,6 +347,11 @@ def test_production_invalid_zone_never_commits_or_serializes(tmp_path, canonical
             ).fetchone()[0]
             == 0
         )
+        workflow_status, stage_status = kernel.db.connection.execute(
+            "SELECT w.status,s.status FROM workflow_runs w JOIN stage_runs s ON s.workflow_id=w.id"
+        ).fetchone()
+        assert workflow_status == "FAILED"
+        assert stage_status == "FAIL"
     finally:
         kernel.close()
 
@@ -340,6 +366,7 @@ def test_production_zone_retry_reuses_transaction(tmp_path, canonical_path) -> N
             b'{"schema_version":"1.0","phase":"review","status":"PASS","payload":{"verdict":"approved","findings":["none"]}}',
             b'{"schema_version":"1.0","phase":"repair","status":"PASS","payload":{"script":["s2"],"resolved_findings":["none"]}}',
             invalid,
+            invalid,
         ] + _item_responses([5] * 8, [300] * 8)
         result = Stage1Service(
             kernel, DeterministicMockAdapter(responses=responses), canonical_path
@@ -353,8 +380,153 @@ def test_production_zone_retry_reuses_transaction(tmp_path, canonical_path) -> N
         assert len({row["id"] for row in rows}) == 1
         assert [(row["attempt_index"], row["status"]) for row in rows] == [
             (1, "FAILED"),
-            (2, "FINISHED"),
+            (2, "FAILED"),
+            (3, "FINISHED"),
         ]
+    finally:
+        kernel.close()
+
+
+def test_production_zone_retry_reports_exact_overage(tmp_path, canonical_path) -> None:
+    kernel = WorkflowKernel(tmp_path)
+    try:
+        responses = [
+            b'{"schema_version":"1.0","phase":"plan","status":"PASS","payload":{"premise":"p","beats":["b"]}}',
+            b'{"schema_version":"1.0","phase":"draft","status":"PASS","payload":{"script":["s"]}}',
+            b'{"schema_version":"1.0","phase":"review","status":"PASS","payload":{"verdict":"approved","findings":["none"]}}',
+            b'{"schema_version":"1.0","phase":"repair","status":"PASS","payload":{"script":["s2"],"resolved_findings":["none"]}}',
+            _zone_response("GREETING", 1, 36, "too_long"),
+        ] + _item_responses([5] * 8, [300] * 8)
+        instructions: list[str] = []
+
+        class RecordingAdapter(DeterministicMockAdapter):
+            def generate_structured(self, request, cancellation):
+                instructions.append(request.instruction)
+                return super().generate_structured(request, cancellation)
+
+        result = Stage1Service(kernel, RecordingAdapter(responses=responses), canonical_path).start(
+            Stage1Request("YOUTH_SAFE", duration_minutes=12, duration_confirmed=True)
+        )
+
+        assert result.reason_code == "S144_CHARACTER_REFERENCE_PRODUCTION_REQUIRED"
+        assert "had 36 Unicode words. Remove exactly 18 words" in instructions[5]
+        assert "Count only the text field's Unicode words" in instructions[5]
+        assert "revise this exact rejected text rather than starting over" in instructions[5]
+        assert "too_long" in instructions[5]
+    finally:
+        kernel.close()
+
+
+def test_production_segments_can_balance_item_word_budget(tmp_path, canonical_path) -> None:
+    kernel = WorkflowKernel(tmp_path)
+    try:
+        responses = [
+            b'{"schema_version":"1.0","phase":"plan","status":"PASS","payload":{"premise":"p","beats":["b"]}}',
+            b'{"schema_version":"1.0","phase":"draft","status":"PASS","payload":{"script":["s"]}}',
+            b'{"schema_version":"1.0","phase":"review","status":"PASS","payload":{"verdict":"approved","findings":["none"]}}',
+            b'{"schema_version":"1.0","phase":"repair","status":"PASS","payload":{"script":["s2"],"resolved_findings":["none"]}}',
+        ]
+        items = _item_responses([5] * 8, [300] * 8)
+        items[:3] = [
+            _zone_response("GREETING", 1, 27, "balanced_first"),
+            _zone_response("GREETING", 1, 19, "balanced_second"),
+            _zone_response("GREETING", 1, 20, "balanced_third"),
+        ]
+        result = Stage1Service(
+            kernel, DeterministicMockAdapter(responses=responses + items), canonical_path
+        ).start(Stage1Request("YOUTH_SAFE", duration_minutes=12, duration_confirmed=True))
+
+        assert result.reason_code == "S144_CHARACTER_REFERENCE_PRODUCTION_REQUIRED"
+        rows = kernel.db.connection.execute(
+            "SELECT t.basename,g.status FROM asset_transactions t JOIN generation_calls g "
+            "ON g.transaction_id=t.id WHERE t.basename LIKE 'segment-greeting-001-%' "
+            "ORDER BY t.basename"
+        ).fetchall()
+        assert [(row["basename"], row["status"]) for row in rows] == [
+            (f"segment-greeting-001-0{index}.json", "FINISHED") for index in range(1, 4)
+        ]
+    finally:
+        kernel.close()
+
+
+def test_production_item_adds_segment_when_three_are_short(tmp_path, canonical_path) -> None:
+    kernel = WorkflowKernel(tmp_path)
+    try:
+        responses = [
+            b'{"schema_version":"1.0","phase":"plan","status":"PASS","payload":{"premise":"p","beats":["b"]}}',
+            b'{"schema_version":"1.0","phase":"draft","status":"PASS","payload":{"script":["s"]}}',
+            b'{"schema_version":"1.0","phase":"review","status":"PASS","payload":{"verdict":"approved","findings":["none"]}}',
+            b'{"schema_version":"1.0","phase":"repair","status":"PASS","payload":{"script":["s2"],"resolved_findings":["none"]}}',
+        ]
+        items = _item_responses([5] * 8, [300] * 8)
+        items[:3] = [
+            _zone_response("GREETING", 1, 18, "short_first"),
+            _zone_response("GREETING", 1, 14, "short_second"),
+            _zone_response("GREETING", 1, 19, "short_third"),
+            _zone_response("GREETING", 1, 19, "completion"),
+        ]
+        result = Stage1Service(
+            kernel, DeterministicMockAdapter(responses=responses + items), canonical_path
+        ).start(Stage1Request("YOUTH_SAFE", duration_minutes=12, duration_confirmed=True))
+
+        assert result.reason_code == "S144_CHARACTER_REFERENCE_PRODUCTION_REQUIRED"
+        rows = kernel.db.connection.execute(
+            "SELECT basename,status FROM asset_transactions "
+            "WHERE basename LIKE 'segment-greeting-001-%' ORDER BY basename"
+        ).fetchall()
+        assert [(row["basename"], row["status"]) for row in rows] == [
+            (f"segment-greeting-001-0{index}.json", "COMMITTED") for index in range(1, 5)
+        ]
+    finally:
+        kernel.close()
+
+
+def test_production_zone_reserves_retry_after_duplicate(tmp_path, canonical_path) -> None:
+    kernel = WorkflowKernel(tmp_path)
+    try:
+        item_responses = _item_responses([5] * 8, [300] * 8)
+        first = item_responses[0]
+        responses = [
+            b'{"schema_version":"1.0","phase":"plan","status":"PASS","payload":{"premise":"p","beats":["b"]}}',
+            b'{"schema_version":"1.0","phase":"draft","status":"PASS","payload":{"script":["s"]}}',
+            b'{"schema_version":"1.0","phase":"review","status":"PASS","payload":{"verdict":"approved","findings":["none"]}}',
+            b'{"schema_version":"1.0","phase":"repair","status":"PASS","payload":{"script":["s2"],"resolved_findings":["none"]}}',
+            first,
+            _zone_response("GREETING", 1, 36, "second_too_long_1"),
+            _zone_response("GREETING", 1, 36, "second_too_long_2"),
+            first,
+            item_responses[1],
+        ] + item_responses[2:]
+        instructions: list[str] = []
+        temperatures: list[float] = []
+
+        class RecordingAdapter(DeterministicMockAdapter):
+            def generate_structured(self, request, cancellation):
+                instructions.append(request.instruction)
+                temperatures.append(request.temperature)
+                return super().generate_structured(request, cancellation)
+
+        result = Stage1Service(kernel, RecordingAdapter(responses=responses), canonical_path).start(
+            Stage1Request("YOUTH_SAFE", duration_minutes=12, duration_confirmed=True)
+        )
+
+        assert result.reason_code == "S144_CHARACTER_REFERENCE_PRODUCTION_REQUIRED"
+        calls = kernel.db.connection.execute(
+            "SELECT g.attempt_index,g.status,g.failure_code FROM generation_calls g "
+            "JOIN asset_transactions t ON t.id=g.transaction_id "
+            "WHERE t.basename='segment-greeting-001-02.json' ORDER BY attempt_index"
+        ).fetchall()
+        assert [tuple(row) for row in calls] == [
+            (1, "FAILED", "S165_SEGMENT_OVER_BUDGET"),
+            (2, "FAILED", "S165_SEGMENT_OVER_BUDGET"),
+            (3, "FAILED", "S166_SEGMENT_DUPLICATE"),
+            (4, "FINISHED", None),
+        ]
+        assert "Their prose is deliberately withheld to prevent copying" in instructions[5]
+        assert "đgreeting_1_1sentence1" not in instructions[5]
+        assert "the previous candidate duplicated an already committed segment" in instructions[8]
+        assert "đgreeting_1_1sentence1" not in instructions[8]
+        assert temperatures[8] == 0.7
     finally:
         kernel.close()
 

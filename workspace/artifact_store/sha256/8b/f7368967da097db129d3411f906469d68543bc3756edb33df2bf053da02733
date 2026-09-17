@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "ENDING",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "ending_003_01",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "trong ngôi nhà nhỏ xinh",
+      "text": "Cuộc sống trong ngôi nhà nhỏ xinh dần trở nên trọn vẹn, mỗi cảm xúc đều tìm thấy nơi ở và chia sẻ những câu chuyện của mình."
+    }
+  ]
+}

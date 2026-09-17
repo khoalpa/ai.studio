@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "GREETING",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "greeting_004_04",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "autumn_evening_quiet_alley",
+      "text": "Mùa thu đến, lá vàng rơi tạo nên khung cảnh đẹp đẽ, tô điểm cho ngôi nhà nhỏ một cách tĩnh lặng và thơ mộng."
+    }
+  ]
+}

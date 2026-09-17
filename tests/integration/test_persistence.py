@@ -39,7 +39,7 @@ def test_new_database_wal_foreign_keys_tables_and_idempotent_migration(tmp_path:
     assert required <= names
     database.close()
     reopened = Database(tmp_path / "state.sqlite3", MIGRATIONS)
-    assert reopened.connection.execute("SELECT COUNT(*) FROM schema_migrations").fetchone()[0] == 8
+    assert reopened.connection.execute("SELECT COUNT(*) FROM schema_migrations").fetchone()[0] == 9
     call_columns = {
         row[1] for row in reopened.connection.execute("PRAGMA table_info(generation_calls)")
     }

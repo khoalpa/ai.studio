@@ -15,7 +15,12 @@ from audio_story.adapters.image import (
     LocalImageAdapter,
 )
 from audio_story.validation.canonical import canonical_json_bytes, sha256_bytes
-from audio_story.validation.images import PNG_SIGNATURE, validate_image_qa, validate_png
+from audio_story.validation.images import (
+    PNG_SIGNATURE,
+    managed_upscale_evidence,
+    validate_image_qa,
+    validate_png,
+)
 from audio_story.workflows.image_transaction import (
     ImageTransactionResult,
     SemanticImageGateResult,
@@ -77,12 +82,16 @@ def generate_character_reference(
         )
     description = str(character["description"])
     prompt = (
-        "full-body character reference portrait, neutral standing pose, plain background, "
+        "solo portrait of exactly one person, one character only, full body visible head "
+        "to feet, centered neutral standing pose, plain background, "
         "consistent facial identity, no text, no watermark; "
         f"name: {character['name']}; age: {character['age']}; role: {character['role']}; "
         f"description: {description}"
     )
-    negative = "text, watermark, logo, duplicate person, cropped head, cropped feet, blurry"
+    negative = (
+        "text, watermark, logo, two people, multiple people, duplicate person, "
+        "character sheet, side-by-side figures, cropped head, cropped feet, blurry"
+    )
     request = ImageRequest(
         f"{character_id}.png",
         sha256_bytes(prompt.encode("utf-8")),
@@ -109,7 +118,10 @@ def generate_character_reference(
         config.adapter,
         owner_stage="STAGE1",
         artifact_role="CHARACTER_ASSET",
-        max_attempts=2,
+        # SDXL can occasionally produce a duplicate figure despite a single-person
+        # prompt.  A rejected candidate is never bound; give this independent,
+        # seed-varied generation one final bounded chance before Stage 1 fails.
+        max_attempts=3,
         metadata_binder=bind_character_metadata,
         character_id=character_id,
         semantic_assessor=config.semantic_assessor,
@@ -123,20 +135,22 @@ def bind_character_metadata(data: bytes, request: ImageRequest, response: ImageR
     character_id = context.get("character_id")
     if not isinstance(character_id, str) or not character_id.startswith("char_"):
         raise ValueError("character_id is required for production character metadata")
-    validate_png(data, request.basename, expected_dimensions=(1536, 2048))
-    metadata = canonical_json_bytes(
-        {
-            "provenance": "PRODUCTION_M5P_COMFYUI",
-            "character_id": character_id,
-            "model_identity": response.model_identity,
-            "adapter_version": response.adapter_version,
-            "prompt_digest": request.prompt_digest,
-            "workflow_digest": request.workflow_digest,
-            "seed": request.seed,
-            "transaction_id": request.transaction_id,
-            "generation_call_id": request.generation_call_id,
-        }
-    )
+    info = validate_png(data, request.basename, expected_dimensions=(1536, 2048))
+    managed = managed_upscale_evidence(info, (1536, 2048))
+    provenance: dict[str, Any] = {
+        "provenance": "PRODUCTION_M5P_COMFYUI",
+        "character_id": character_id,
+        "model_identity": response.model_identity,
+        "adapter_version": response.adapter_version,
+        "prompt_digest": request.prompt_digest,
+        "workflow_digest": request.workflow_digest,
+        "seed": request.seed,
+        "transaction_id": request.transaction_id,
+        "generation_call_id": request.generation_call_id,
+    }
+    if managed is not None:
+        provenance["managed_upscale"] = managed
+    metadata = canonical_json_bytes(provenance)
     replacement = _png_chunk(b"tEXt", b"audio_story\0" + metadata)
     output = bytearray(PNG_SIGNATURE)
     offset = len(PNG_SIGNATURE)

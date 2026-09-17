@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "GREETING",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "greeting_002_04",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "Ngõ nhỏ, ngôi nhà cũ, ánh sáng mờ mờ từ cửa sổ.",
+      "text": "Tôi nghe thấy tiếng gió thổi qua kẽ lá gợi lên những ký ức về quá khứ."
+    }
+  ]
+}

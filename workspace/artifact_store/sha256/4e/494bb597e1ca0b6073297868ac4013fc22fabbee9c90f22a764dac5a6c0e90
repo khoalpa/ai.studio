@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "CLIMAX",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "climax_003_02",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "trong ngôi nhà nhỏ xinh",
+      "text": "Cảm xúc nhỏ mở phong bì, phát hiện một lá thư kêu gọi họ tham gia giải quyết một bí ẩn lớn."
+    }
+  ]
+}

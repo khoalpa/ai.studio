@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "GREETING",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "greeting_005_03",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "Bên ngoài ngôi nhà nhỏ, mùa thu đã đến, những chiếc lá vàng rơi rải rác trên mặt đất.",
+      "text": "Mùa thu đến, lá vàng rơi tạo nên khung cảnh đẹp đẽ, tô điểm cho ngôi nhà nhỏ một cách tĩnh lặng và thơ mộng."
+    }
+  ]
+}

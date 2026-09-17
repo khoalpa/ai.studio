@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "ENDING",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "ending_003_03",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "Trong ngôi nhà nhỏ, ánh sáng từ cửa sổ rọi qua góc nhỏ của phòng khách.",
+      "text": "Trong góc nhỏ của phòng khách, ánh sáng từ cửa sổ rọi qua, làm nổi bật những bức tranh nhỏ treo trên tường, kể về những câu chuyện hạnh phúc và nỗi buồn của gia đình."
+    }
+  ]
+}

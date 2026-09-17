@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "GREETING",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "greeting_005_01",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "Trong ngôi nhà nhỏ xinh,",
+      "text": "một cảm xúc nhỏ bước vào phòng khách, ngửi mùi hương quen thuộc."
+    }
+  ]
+}

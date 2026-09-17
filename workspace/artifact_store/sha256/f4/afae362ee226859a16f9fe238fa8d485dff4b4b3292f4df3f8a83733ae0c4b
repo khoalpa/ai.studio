@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "DEVELOPMENT",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "development_004_02",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "trong ngôi nhà nhỏ",
+      "text": "Một cảm xúc nhỏ khác tìm thấy một góc nhỏ trống và ngồi xuống, bắt đầu kể câu chuyện của mình."
+    }
+  ]
+}

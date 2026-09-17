@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "FALLING",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "falling_002_03",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "trong ngôi nhà nhỏ xinh",
+      "text": "Họ bắt đầu chia sẻ những câu chuyện và kỷ niệm, tạo nên một không gian thân thiện và gắn kết."
+    }
+  ]
+}

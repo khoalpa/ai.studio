@@ -12,6 +12,7 @@ from audio_story.backup import BackupError, create_backup, restore_backup
 from audio_story.doctor import report_json
 from audio_story.domain.stage1 import Stage1Request
 from audio_story.persistence.migrations import migration_directory
+from audio_story.studio import serve_studio
 from audio_story.workflows import Stage1Service, WorkflowKernel
 
 
@@ -37,6 +38,23 @@ def build_parser() -> argparse.ArgumentParser:
     stage1.add_argument("--duration", type=int, required=True)
     stage1.add_argument("--language", choices=("vi", "en"), default="vi")
     stage1.add_argument("--seed", type=int, default=0)
+    studio = subparsers.add_parser("studio", help="serve the local Studio UI and SQLite API")
+    studio.add_argument("--workspace", type=Path, required=True)
+    studio.add_argument("--host", default="127.0.0.1")
+    studio.add_argument("--port", type=int, default=4173)
+    studio.add_argument("--ui-directory", type=Path)
+    studio.add_argument("--comfyui-endpoint", default="http://127.0.0.1:8188")
+    studio.add_argument("--comfyui-workflow", type=Path)
+    studio.add_argument("--qwen-model", type=Path)
+    studio.add_argument("--qwen-runner", type=Path)
+    studio.add_argument("--ffmpeg", type=Path)
+    studio.add_argument("--ffprobe", type=Path)
+    studio.add_argument("--llama-endpoint", default="http://127.0.0.1:8080")
+    studio.add_argument("--llama-server", type=Path)
+    studio.add_argument("--llama-model", type=Path)
+    studio.add_argument("--comfy-python", type=Path)
+    studio.add_argument("--comfy-root", type=Path)
+    studio.add_argument("--comfy-model-config", type=Path)
     return parser
 
 
@@ -107,6 +125,26 @@ def main(argv: Sequence[str] | None = None) -> int:
             return 0 if stage1_result.status == "PASS" else 1
         finally:
             kernel.close()
+    if arguments.command == "studio":
+        serve_studio(
+            arguments.workspace,
+            host=arguments.host,
+            port=arguments.port,
+            ui_directory=arguments.ui_directory,
+            comfyui_endpoint=arguments.comfyui_endpoint,
+            comfyui_workflow_path=arguments.comfyui_workflow,
+            qwen_model_path=arguments.qwen_model,
+            qwen_runner_path=arguments.qwen_runner,
+            ffmpeg_path=arguments.ffmpeg,
+            ffprobe_path=arguments.ffprobe,
+            llama_endpoint=arguments.llama_endpoint,
+            llama_server_path=arguments.llama_server,
+            llama_model_path=arguments.llama_model,
+            comfy_python_path=arguments.comfy_python,
+            comfy_root_path=arguments.comfy_root,
+            comfy_model_config_path=arguments.comfy_model_config,
+        )
+        return 0
     return 2  # pragma: no cover - argparse rejects unknown commands
 
 

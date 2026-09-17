@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "GREETING",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "greeting_001_02",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "安静的角落",
+      "text": "Ngôi nhà của những cảm xúc nhỏ nằm ở một góc yên tĩnh của thành phố. Nơi đây, mọi thứ đều mang một vẻ đẹp riêng biệt, từ màu sắc đến cách trang trí nội thất. Mỗi góc nhỏ của ngôi nhà đều chứa đựng những câu chuyện nhỏ, phản ánh cảm xúc của những người ở đó."
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "FAREWELL",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "farewell_005_04",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "trong ngôi nhà nhỏ",
+      "text": "Những câu chuyện nhỏ trong ngôi nhà này sẽ mãi mãi được lưu giữ trong tâm trí, như những kỷ niệm đẹp."
+    }
+  ]
+}

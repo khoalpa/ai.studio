@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "GREETING",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "greeting_003_01",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "trong không gian của ngôi nhà cảm xúc nhỏ",
+      "text": "Các nhân vật bước vào ngôi nhà, cảm thấy phấn khích và hạnh phúc."
+    }
+  ]
+}

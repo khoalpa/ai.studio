@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "DEVELOPMENT",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "development_004_04",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "nơi giữa hai con đường",
+      "text": "Bó hoa nhỏ đặt xuống tạo ra một trở ngại nhỏ, nhưng rõ ràng."
+    }
+  ]
+}

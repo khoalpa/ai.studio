@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "DEVELOPMENT",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "development_001_02",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "Nhà cửa nhỏ nằm ở giữa hai con đường",
+      "text": "Những góc nhỏ trong ngôi nhà này đều ẩn chứa những câu chuyện ngắn về hạnh phúc, nỗi buồn, và những tình cảm nhỏ."
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "FAREWELL",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "farewell_001_03",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "trong ngôi nhà nhỏ",
+      "text": "Những câu chuyện nhỏ trong ngôi nhà này đã kết thúc, để lại cho mỗi người một bài học về hạnh phúc và nỗi buồn."
+    }
+  ]
+}

@@ -11,7 +11,12 @@ from typing import Any, cast
 
 from audio_story.adapters.image.base import ImageRequest, ImageResponse
 from audio_story.validation.canonical import canonical_json_bytes, sha256_bytes
-from audio_story.validation.images import PNG_SIGNATURE, PngInfo, validate_png
+from audio_story.validation.images import (
+    PNG_SIGNATURE,
+    PngInfo,
+    managed_upscale_evidence,
+    validate_png,
+)
 
 PROVENANCE_KEY = "image_provenance_commitment"
 REALIZATION_KEY = "visual_realization_commitment"
@@ -43,6 +48,7 @@ def bind_stage2_commitments(data: bytes, request: ImageRequest, response: ImageR
         raise ValueError("M7C300_COMMITMENT_CONTEXT_MISSING")
     info = validate_png(data, request.basename, expected_dimensions=(3840, 2160))
     pixel_digest = decoded_pixel_digest(data, info)
+    managed = managed_upscale_evidence(info, (3840, 2160))
     transaction_role = cast(str, context["transaction_role"])
     index = int(context["transaction_index"])
     provenance = OrderedDict(
@@ -51,15 +57,20 @@ def bind_stage2_commitments(data: bytes, request: ImageRequest, response: ImageR
         orientation="LANDSCAPE",
         basename=request.basename,
         transaction_id=request.transaction_id,
-        source_quality_tier="NATIVE_OR_EQUIVALENT",
-        source_eligibility_mode="OBSERVABLE_NATIVE",
+        source_quality_tier="MANAGED_UPSCALED" if managed else "NATIVE_OR_EQUIVALENT",
+        source_eligibility_mode="OBSERVABLE_MANAGED_UPSCALE" if managed else "OBSERVABLE_NATIVE",
         source_preimage_observability="OBSERVED",
         source_eligibility_gate_id="IMAGE-NATIVE-SOURCE-ELIGIBILITY-01",
         source_eligibility_gate_status="PASS",
         observability="OBSERVED",
-        source_dimensions=OrderedDict(width=3840, height=2160),
+        source_dimensions=OrderedDict(
+            width=managed["source_width"] if managed else 3840,
+            height=managed["source_height"] if managed else 2160,
+        ),
         final_dimensions=OrderedDict(width=info.width, height=info.height),
-        source_of_pixels_digest_sha256=pixel_digest,
+        source_of_pixels_digest_sha256=(
+            managed["source_pixels_sha256"] if managed else pixel_digest
+        ),
         final_file_sha256=sha256_bytes(data),
         art_direction_id=context["art_direction_id"],
     )

@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "CLIMAX",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "climax_001_01",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "trong ngôi nhà nhỏ xinh",
+      "text": "Cảm xúc nhỏ cuối cùng nhận ra bức ảnh đã úa màu, gợi nhớ về một kỷ niệm đẹp."
+    }
+  ]
+}

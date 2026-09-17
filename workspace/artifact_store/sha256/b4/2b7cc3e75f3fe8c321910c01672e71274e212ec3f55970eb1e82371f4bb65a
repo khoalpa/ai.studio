@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "GREETING",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "greeting_004_05",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "trong ngôi nhà nhỏ xinh",
+      "text": "Những cảm xúc nhỏ tìm thấy một góc ngồi yên tĩnh và bắt đầu kể lại những kỷ niệm của mình."
+    }
+  ]
+}

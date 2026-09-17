@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "CLIMAX",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "climax_001_03",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "trong ngôi nhà nhỏ xinh",
+      "text": "Những cảm xúc nhỏ cùng nhau giải quyết vấn đề trung tâm, tạo ra một không gian thân thiện và gắn kết."
+    }
+  ]
+}

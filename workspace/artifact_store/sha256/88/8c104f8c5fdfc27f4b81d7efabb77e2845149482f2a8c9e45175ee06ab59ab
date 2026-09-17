@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "FAREWELL",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "farewell_005_01",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "trong ngôi nhà nhỏ xinh",
+      "text": "Chiếc đồng hồ dừng kim, cảm xúc nhỏ quyết định ở lại. Họ cảm thấy hạnh phúc và an toàn."
+    }
+  ]
+}

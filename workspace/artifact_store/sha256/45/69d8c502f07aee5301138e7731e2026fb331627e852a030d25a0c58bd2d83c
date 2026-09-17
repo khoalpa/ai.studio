@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "GREETING",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "greeting_002_02",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "outside the small house, autumn leaves changing colors",
+      "text": "Mùa thu đang đến, những chiếc lá đã đổi màu, làm cho không gian xung quanh ngôi nhà nhỏ trở nên tĩnh lặng và thơ mộng."
+    }
+  ]
+}

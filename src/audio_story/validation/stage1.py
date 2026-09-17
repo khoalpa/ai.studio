@@ -82,6 +82,112 @@ ZONE_ORDER = (
     "ENDING",
     "FAREWELL",
 )
+TERMINAL_SENTENCE_PUNCTUATION = (".", "!", "?", "。", "！", "？")
+_CJK_WORD_CHARACTER = re.compile(r"[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]")
+_OTHER_NON_LATIN_CHARACTER = re.compile(r"[\u3040-\u30ff\uac00-\ud7af]")
+_VIETNAMESE_DIACRITIC = re.compile(
+    r"[ÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠƯàáâãèéêìíòóôõùúăđĩũơư"
+    r"ẠẢẤẦẨẪẬẮẰẲẴẶẸẺẼỀỂỄỆỈỊỌỎỐỒỔỖỘỚỜỞỠỢỤỦỨỪỬỮỰỲỶỸỴ]"
+)
+
+
+def has_terminal_sentence_punctuation(text: str) -> bool:
+    """Return whether *text* ends in a supported sentence terminator."""
+    return text.rstrip().endswith(TERMINAL_SENTENCE_PUNCTUATION)
+
+
+def unicode_word_count(text: str) -> int:
+    """Count whitespace-delimited words and individual CJK ideographs.
+
+    CJK prose normally has no whitespace between lexical words. Counting each
+    ideograph avoids treating an entire Chinese sentence as one word while
+    retaining the existing behaviour for Latin-script prose.
+    """
+    cjk_characters = len(_CJK_WORD_CHARACTER.findall(text))
+    non_cjk_text = _CJK_WORD_CHARACTER.sub(" ", text)
+    return cjk_characters + len(re.findall(r"\w+", non_cjk_text, flags=re.UNICODE))
+
+
+def validate_script_language(script: Sequence[Mapping[str, Any]], language: str) -> None:
+    """Reject a script whose writing system contradicts the selected language."""
+    text = " ".join(str(item.get("text", "")) for item in script)
+    if _CJK_WORD_CHARACTER.search(text) or _OTHER_NON_LATIN_CHARACTER.search(text):
+        raise Stage1Error(
+            "S167_LANGUAGE_MISMATCH",
+            "script uses a writing system different from the selected language",
+            "$.script",
+        )
+    vietnamese_marks = len(_VIETNAMESE_DIACRITIC.findall(text))
+    minimum_vietnamese_marks = max(2, unicode_word_count(text) // 200)
+    if language == "vi" and vietnamese_marks < minimum_vietnamese_marks:
+        raise Stage1Error(
+            "S167_LANGUAGE_MISMATCH",
+            "Vietnamese script does not contain enough Vietnamese diacritics",
+            "$.script",
+        )
+    if language == "en" and vietnamese_marks:
+        raise Stage1Error(
+            "S167_LANGUAGE_MISMATCH",
+            "English script contains Vietnamese diacritics",
+            "$.script",
+        )
+
+
+def validate_generated_segment_language(text: str, language: str) -> None:
+    """Reject a single generated segment in the wrong selected language.
+
+    The full-script validator deliberately requires two Vietnamese diacritics,
+    but a short segment can legitimately contain only one.  Generation must
+    still reject CJK/Japanese/Korean immediately, before that candidate uses a
+    retry and before it can make a later item budget impossible to satisfy.
+    """
+    if _CJK_WORD_CHARACTER.search(text) or _OTHER_NON_LATIN_CHARACTER.search(text):
+        raise Stage1Error(
+            "S167_LANGUAGE_MISMATCH",
+            "segment uses a writing system different from the selected language",
+            "$.items[0].text",
+        )
+    vietnamese_marks = len(_VIETNAMESE_DIACRITIC.findall(text))
+    if language == "vi" and not vietnamese_marks:
+        raise Stage1Error(
+            "S167_LANGUAGE_MISMATCH",
+            "Vietnamese segment does not contain a Vietnamese diacritic",
+            "$.items[0].text",
+        )
+    if language == "en" and vietnamese_marks:
+        raise Stage1Error(
+            "S167_LANGUAGE_MISMATCH",
+            "English segment contains Vietnamese diacritics",
+            "$.items[0].text",
+        )
+
+
+OUTLINE_ORDER = tuple(zone.lower() for zone in ZONE_ORDER)
+SCRIPT_ITEM_ORDER = ("zone", "environment", "voice", "speed", "lang", "text")
+SCRIPT_ENVIRONMENTS = frozenset(
+    [
+        "none",
+        "rain_soft",
+        "cafe_soft",
+        "night_city_soft",
+        "forest_deep_ambience",
+        "school_hallway",
+        "garden_morning",
+        "bedroom_warm",
+        "office_evening",
+        "apartment_night",
+        "train_night",
+        "sea_wind_soft",
+        "hospital_corridor_soft",
+        "old_house_ambience",
+        "library_soft",
+        "radio_studio_soft",
+        "kitchen_evening",
+        "street_after_rain",
+        "rooftop_wind_soft",
+        "river_soft",
+    ]
+)
 INTERNAL_TERMS = ("beat map", "repair hypothesis", "quality ledger", "system prompt")
 ANCHOR_ROOT = (
     "schema_version",
@@ -230,11 +336,33 @@ def story_content_projection(story: Mapping[str, Any]) -> dict[str, Any]:
 
 
 def word_count(script: Sequence[Mapping[str, Any]]) -> int:
-    return sum(len(re.findall(r"\w+", str(item["text"]), flags=re.UNICODE)) for item in script)
+    return sum(unicode_word_count(str(item["text"])) for item in script)
 
 
 def final_script_digest(script: Sequence[Mapping[str, Any]]) -> str:
     return sha256_bytes(canonical_json_bytes([item["text"] for item in script]))
+
+
+def validate_production_script_content(script: Sequence[Mapping[str, Any]]) -> None:
+    """Reject generated placeholder text before it can become a package."""
+    texts = [str(item.get("text", "")).strip() for item in script]
+    combined = " ".join(texts).casefold()
+    if any(re.search(r"\bcâu\s+\d+\b|\bsentence\s+\d+\b", text.casefold()) for text in texts):
+        raise Stage1Error(
+            "S140_PLACEHOLDER_SCRIPT",
+            "placeholder numbering is not production content",
+            "$.script",
+        )
+    words = re.findall(r"\w+", combined, flags=re.UNICODE)
+    counts: dict[str, int] = {}
+    for word in words:
+        counts[word] = counts.get(word, 0) + 1
+    if len(set(texts)) < max(2, len(texts) // 4):
+        raise Stage1Error("S141_REPETITIVE_SCRIPT", "script items are duplicated", "$.script")
+    if not words or max(counts.values(), default=0) / len(words) > 0.35:
+        raise Stage1Error(
+            "S141_REPETITIVE_SCRIPT", "script text is excessively repetitive", "$.script"
+        )
 
 
 def validate_story_bytes(data: bytes, contract: ProfileContract) -> OrderedObject:
@@ -255,6 +383,13 @@ def validate_story_bytes(data: bytes, contract: ProfileContract) -> OrderedObjec
     characters = parsed.get("characters")
     _require(isinstance(characters, list) and bool(characters), "S120_STORY_SCHEMA", "$.characters")
     assert isinstance(characters, list)
+    outline = _object(parsed.get("outline"), "S120_STORY_SCHEMA", "$.outline")
+    validate_field_order(outline, OUTLINE_ORDER, "story.json", "$.outline")
+    _require(
+        all(isinstance(value, str) and value.strip() for value in outline.values()),
+        "S120_STORY_SCHEMA",
+        "$.outline",
+    )
     seen: set[str] = set()
     for index, raw in enumerate(characters):
         character = _object(raw, "S120_STORY_SCHEMA", f"$.characters[{index}]")
@@ -289,12 +424,33 @@ def validate_story_bytes(data: bytes, contract: ProfileContract) -> OrderedObjec
     ranks = []
     for index, raw in enumerate(script):
         item = _object(raw, "S120_STORY_SCHEMA", f"$.script[{index}]")
+        validate_field_order(item, SCRIPT_ITEM_ORDER, "story.json", f"$.script[{index}]")
+        _require(
+            item.get("environment") in SCRIPT_ENVIRONMENTS,
+            "S120_STORY_SCHEMA",
+            f"$.script[{index}].environment",
+        )
+        _require(
+            item.get("voice") in {"NARRATOR", "MALE", "FEMALE"},
+            "S120_STORY_SCHEMA",
+            f"$.script[{index}].voice",
+        )
+        _require(
+            item.get("speed") in {"SLOW", "NORMAL", "FAST"},
+            "S120_STORY_SCHEMA",
+            f"$.script[{index}].speed",
+        )
+        _require(
+            item.get("lang") == str(meta["language"]).upper(),
+            "S120_STORY_SCHEMA",
+            f"$.script[{index}].lang",
+        )
         zone = item.get("zone")
         _require(zone in ZONE_ORDER, "S124_ZONE_ORDER", f"$.script[{index}].zone")
         ranks.append(ZONE_ORDER.index(zone))
         text = item.get("text")
         _require(
-            isinstance(text, str) and text.rstrip().endswith((".", "!", "?")),
+            isinstance(text, str) and has_terminal_sentence_punctuation(text),
             "S128_INCOMPLETE_SENTENCE",
             f"$.script[{index}].text",
         )

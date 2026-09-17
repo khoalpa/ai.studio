@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "OPENING",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "opening_002_04",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "Trong ngôi nhà nhỏ giữa hai con đường, ánh sáng yếu ớt từ cửa sổ chiếu vào góc nhỏ của căn phòng.",
+      "text": "Trong góc nhỏ của căn phòng, mảnh giấy gấp tư được đặt trên kệ sách, chờ đợi ai đó khám phá."
+    }
+  ]
+}

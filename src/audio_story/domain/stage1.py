@@ -33,6 +33,9 @@ class Stage1Request:
     duration_confirmed: bool = False
     seed: int = 0
     title: str = "Ngọn Đèn Sau Mưa"
+    series: str | None = None
+    episode: str = "1"
+    creative_input: str = ""
     test_mode: bool = False
 
 

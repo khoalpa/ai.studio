@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "INTRODUCTION",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "introduction_005_04",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "trong nhà",
+      "text": "Hàng ngày, góc nhỏ trong nhà đều hé lộ thêm câu chuyện ngắn về hạnh phúc, nỗi buồn, và những tình cảm nhỏ."
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "GREETING",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "greeting_002_04",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "trong ngôi nhà nhỏ xinh của cảm xúc",
+      "text": "Một cảm xúc nhỏ bước vào phòng khách, nhìn quanh và tìm một nơi để nghỉ ngơi."
+    }
+  ]
+}

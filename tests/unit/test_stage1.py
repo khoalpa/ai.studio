@@ -11,11 +11,20 @@ from audio_story.validation.stage1 import (
     ordered_json_bytes,
     validate_anchor_bytes,
     validate_character_assets,
+    validate_generated_segment_language,
+    validate_production_script_content,
     validate_report_bytes,
+    validate_script_language,
     validate_serialized_dialogue,
     validate_story_bytes,
 )
-from audio_story.workflows.stage1 import _build_report, _build_story
+from audio_story.workflows.stage1 import (
+    _build_report,
+    _build_story,
+    _build_story_bible,
+    _narrative_architecture_instruction,
+    _segment_novelty_instruction,
+)
 from audio_story.workflows.stage1_package import (
     build_manifest,
     build_series_anchor,
@@ -26,6 +35,69 @@ from audio_story.workflows.stage1_package import (
 @pytest.mark.parametrize("profile", ["YOUTH_SAFE", "ADULT_STANDARD", "SERIAL_DETECTIVE"])
 def test_profile_router(profile: str) -> None:
     assert resolve_profile(profile, "vi").profile == profile
+
+
+def test_production_content_rejects_placeholder_script() -> None:
+    with pytest.raises(Stage1Error, match="S140_PLACEHOLDER_SCRIPT"):
+        validate_production_script_content([{"text": "câu 1 chuyện chuyện chuyện."}])
+
+
+def test_script_language_matches_the_selected_dropdown_language() -> None:
+    validate_script_language([{"text": "Mưa nhẹ rơi trên mái nhà."}], "vi")
+    validate_script_language([{"text": "Gentle rain fell on the roof."}], "en")
+
+    with pytest.raises(Stage1Error, match="S167_LANGUAGE_MISMATCH"):
+        validate_script_language([{"text": "欢迎来到故事世界。"}], "vi")
+    with pytest.raises(Stage1Error, match="S167_LANGUAGE_MISMATCH"):
+        validate_script_language([{"text": "Mưa nhẹ rơi trên mái nhà."}], "en")
+
+
+def test_generated_segment_language_fails_before_a_wrong_language_segment_can_commit() -> None:
+    validate_generated_segment_language("Mưa nhẹ rơi trên mái nhà.", "vi")
+    validate_generated_segment_language("Gentle rain fell on the roof.", "en")
+
+    with pytest.raises(Stage1Error, match="S167_LANGUAGE_MISMATCH"):
+        validate_generated_segment_language("欢迎来到故事世界。", "vi")
+    with pytest.raises(Stage1Error, match="S167_LANGUAGE_MISMATCH"):
+        validate_generated_segment_language("Gentle rain fell on the roof.", "vi")
+
+
+def test_segment_novelty_cues_change_between_segments_and_retries() -> None:
+    initial = _segment_novelty_instruction("GREETING", 3, 3, "vi")
+    retry = _segment_novelty_instruction("GREETING", 3, 3, "vi", variation=1)
+    next_segment = _segment_novelty_instruction("GREETING", 3, 4, "vi")
+
+    assert "Nam" not in initial
+    assert initial != retry
+    assert initial != next_segment
+
+
+def test_story_bible_does_not_repeat_one_plan_beat_into_every_zone() -> None:
+    plan = OrderedDict(payload=OrderedDict(premise="Một tiền đề.", beats=["Một beat duy nhất."]))
+
+    bible = _build_story_bible(plan, "vi")
+
+    assert bible.count("Một beat duy nhất.") == 1
+    assert "OPENING: develop this zone's canonical progression role" in bible
+
+
+@pytest.mark.parametrize("language", ["vi", "en"])
+def test_story_bible_includes_the_causal_climax_and_consequence_contract(language: str) -> None:
+    plan = OrderedDict(payload=OrderedDict(premise="A premise.", beats=["A setup."]))
+
+    bible = _build_story_bible(plan, language)
+    contract = _narrative_architecture_instruction(language)
+
+    assert contract in bible
+    assert "CLIMAX" in contract
+    assert "FALLING" in contract
+    required_phrase = "irreversible" if language == "en" else "không thể rút lại"
+    assert required_phrase in contract
+
+
+def test_production_content_rejects_repetitive_script() -> None:
+    with pytest.raises(Stage1Error, match="S141_REPETITIVE_SCRIPT"):
+        validate_production_script_content([{"text": "la la la la la la la la."}])
 
 
 @pytest.mark.parametrize(

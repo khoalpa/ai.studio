@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "FALLING",
+  "status": "PASS",
+  "items": [
+      {
+          "item_id": "falling_004_01",
+          "speaker_id": "narrator",
+          "voice": "narrator",
+          "speed": "1.0",
+          "environment": "trong phòng trống",
+          "text": "Một cảm xúc nhỏ nhìn quanh, thấy bức tranh cũ kỹ trên tường và nhớ về những kỷ niệm cũ."
+      }
+  ]
+}

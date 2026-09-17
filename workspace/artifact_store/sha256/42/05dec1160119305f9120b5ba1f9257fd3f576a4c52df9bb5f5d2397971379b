@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "GREETING",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "greeting_003_02",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "autumn setting outside the small house",
+      "text": "Những chiếc lá đã đổi màu, tô điểm cho ngôi nhà nhỏ một cách tĩnh lặng và thơ mộng."
+    }
+  ]
+}

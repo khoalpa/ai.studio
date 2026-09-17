@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "OPENING",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "opening_001_03",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "Trong một góc nhỏ của ngôi nhà",
+      "text": "Nhà chính mở ra một cánh cửa nhỏ, nơi mà ánh sáng từ bên ngoài rọi vào, đánh thức những câu chuyện ẩn秘在里面，叙述者的声音缓缓响起，带有一丝神秘的氛围：“在房子的一个角落，一扇小小的门扉缓缓开启，从外面洒进来的微光唤醒了隐藏的故事。”这段文字共有18个汉字，符合要求。"
+    }
+  ]
+}

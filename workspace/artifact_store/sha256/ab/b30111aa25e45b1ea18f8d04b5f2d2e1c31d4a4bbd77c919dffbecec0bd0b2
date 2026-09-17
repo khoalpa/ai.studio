@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "GREETING",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "greeting_002_02",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "Trong ngôi nhà nhỏ nằm giữa hai con đường",
+      "text": "Mỗi ngày, những góc nhỏ trong ngôi nhà đều ẩn chứa những câu chuyện ngắn về hạnh phúc, nỗi buồn, và những tình cảm nhỏ."
+    }
+  ]
+}

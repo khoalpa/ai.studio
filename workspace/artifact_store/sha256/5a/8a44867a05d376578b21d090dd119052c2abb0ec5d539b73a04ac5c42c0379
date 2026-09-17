@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "DEVELOPMENT",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "development_004_01",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "Trong ngôi nhà nhỏ xinh, cảm xúc nhỏ ngửi thấy mùi gỗ cũ kỹ.",
+      "text": "Mùi gỗ kia khiến họ nhớ lại những kỷ niệm trong quá khứ."
+    }
+  ]
+}

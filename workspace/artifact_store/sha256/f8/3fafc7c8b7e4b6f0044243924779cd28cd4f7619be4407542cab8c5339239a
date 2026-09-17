@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "OPENING",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "opening_003_02",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "Ngôi nhà yên tĩnh",
+      "text": "Hồng Nhung bước vào phòng khách, ánh sáng yếu ấm lên khuôn mặt."
+    }
+  ]
+}

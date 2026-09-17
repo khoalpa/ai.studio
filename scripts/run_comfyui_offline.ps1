@@ -1,13 +1,17 @@
 param(
-    [string]$ComfyRoot = 'D:\project\ComfyUI',
+    [string]$ComfyRoot = 'D:\Comfy-Desktop\ComfyUI-Installs\ComfyUI\ComfyUI',
     [string]$ModelConfig = 'C:\Users\lpak\AppData\Roaming\ComfyUI\extra_models_config.yaml',
     [int]$Port = 8188
 )
 
 $ErrorActionPreference = 'Stop'
-$exe = Join-Path $ComfyRoot 'ComfyUI.exe'
-if (-not (Test-Path -LiteralPath $exe -PathType Leaf)) {
-    throw "ComfyUI executable not found: $exe"
+$python = Join-Path $ComfyRoot '.venv\Scripts\python.exe'
+$entrypoint = Join-Path $ComfyRoot 'main.py'
+if (-not (Test-Path -LiteralPath $python -PathType Leaf)) {
+    throw "ComfyUI Python runtime not found: $python"
+}
+if (-not (Test-Path -LiteralPath $entrypoint -PathType Leaf)) {
+    throw "ComfyUI entrypoint not found: $entrypoint"
 }
 if (-not (Test-Path -LiteralPath $ModelConfig -PathType Leaf)) {
     throw "Model path configuration not found: $ModelConfig"
@@ -29,4 +33,4 @@ $arguments = @(
     '--deterministic'
 )
 
-Start-Process -FilePath $exe -WorkingDirectory $ComfyRoot -ArgumentList $arguments
+Start-Process -FilePath $python -WorkingDirectory $ComfyRoot -ArgumentList @($entrypoint) + $arguments

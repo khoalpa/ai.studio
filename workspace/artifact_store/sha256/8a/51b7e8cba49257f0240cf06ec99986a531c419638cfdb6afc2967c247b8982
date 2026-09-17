@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "FAREWELL",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "farewell_004_02",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "trong ngôi nhà nhỏ xinh",
+      "text": "Mùa đông đến, những cảm xúc nhỏ bước ra khỏi nhà, để lại một không gian ấm áp và tràn đầy kỷ niệm."
+    }
+  ]
+}

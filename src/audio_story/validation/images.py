@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 import struct
 import zlib
 from dataclasses import dataclass
@@ -21,6 +22,56 @@ class PngInfo:
     color_type: int
     sha256: str
     metadata: dict[str, object]
+
+
+def managed_upscale_evidence(
+    info: PngInfo, final_dimensions: tuple[int, int]
+) -> dict[str, object] | None:
+    """Validate observable source evidence embedded by the local image adapter."""
+    runtime = info.metadata.get("audio_story")
+    if not isinstance(runtime, dict) or "managed_upscale" not in runtime:
+        return None
+    evidence = runtime["managed_upscale"]
+    if not isinstance(evidence, dict):
+        raise ValueError("managed upscale evidence must be an object")
+    width = evidence.get("source_width")
+    height = evidence.get("source_height")
+    crop = evidence.get("crop_box")
+    final_width, final_height = final_dimensions
+    if (
+        type(width) is not int
+        or type(height) is not int
+        or width <= 0
+        or height <= 0
+        or evidence.get("final_width") != final_width
+        or evidence.get("final_height") != final_height
+        or evidence.get("method") != "CENTER_CROP_LANCZOS_RGB_V1"
+        or not isinstance(crop, list)
+        or len(crop) != 4
+        or any(type(value) is not int for value in crop)
+    ):
+        raise ValueError("managed upscale dimensions are invalid")
+    left, top, right, bottom = crop
+    crop_width, crop_height = right - left, bottom - top
+    if (
+        left < 0
+        or top < 0
+        or right > width
+        or bottom > height
+        or crop_width <= 0
+        or crop_height <= 0
+        or crop_width * final_height != crop_height * final_width
+        or width * 5 < final_width * 2
+        or height * 5 < final_height * 2
+        or crop_width * 5 < final_width * 2
+        or crop_height * 5 < final_height * 2
+    ):
+        raise ValueError("managed upscale violates the source floor or aspect ratio")
+    for key in ("source_png_sha256", "source_pixels_sha256"):
+        digest = evidence.get(key)
+        if not isinstance(digest, str) or re.fullmatch(r"[0-9a-f]{64}", digest) is None:
+            raise ValueError("managed upscale source digest is invalid")
+    return evidence
 
 
 def validate_image_qa(

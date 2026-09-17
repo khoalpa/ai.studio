@@ -1,0 +1,41 @@
+name: Audio Story Release Gate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  quality-and-release:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+      - name: Install FFmpeg
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg
+      - name: Install project
+        run: python -m pip install -e ".[dev]"
+      - name: Canonical hash
+        shell: bash
+        run: test "$(sha256sum canonical/ChatGPT_prompt_v3.16.13.txt | awk '{print $1}')" = "$(cut -d' ' -f1 canonical/prompt.sha256)"
+      - name: Ruff
+        run: |
+          ruff format --check src scripts
+          ruff check .
+      - name: Mypy
+        run: mypy src
+      - name: Tests
+        run: pytest
+      - name: Build release bundle
+        run: python scripts/build_release_bundle.py --output dist/audio-story-studio.zip
+      - name: Release acceptance
+        run: python scripts/validate_release_bundle.py dist/audio-story-studio.zip

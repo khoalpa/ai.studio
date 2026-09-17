@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "INTRODUCTION",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "introduction_001_03",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "trong nhà, ánh sáng ấm áp",
+      "text": "Các nhân vật tìm thấy món đồ bị mất và cảm thấy vui vẻ."
+    }
+  ]
+}

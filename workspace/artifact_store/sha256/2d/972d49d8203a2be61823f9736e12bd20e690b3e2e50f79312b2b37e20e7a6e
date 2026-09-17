@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "ENDING",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "ending_005_03",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "trong ngôi nhà nhỏ xinh",
+      "text": "Cuối cùng, mọi cảm xúc nhỏ đã tìm thấy một không gian thân thiện và gắn kết, chia sẻ những câu chuyện và kỷ niệm của mình."
+    }
+  ]
+}

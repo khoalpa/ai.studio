@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "GREETING",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "greeting_004_01",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "autumnal street near a small house",
+      "text": "Mùa thu đang về, những cây phong trải vàng trên con hẻm yên tĩnh, tô điểm cho ngôi nhà nhỏ một cách tĩnh lặng và thơ mộng."
+    }
+  ]
+}

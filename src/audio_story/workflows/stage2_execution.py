@@ -6,6 +6,7 @@ import os
 from collections import OrderedDict
 from dataclasses import dataclass
 from pathlib import Path
+from threading import Event
 
 from audio_story.adapters.image import ImageRequest, LocalImageAdapter
 from audio_story.domain.stage2 import Stage1PackageInput, Stage2Error, Stage2ZonePlan
@@ -47,6 +48,7 @@ class Stage2ZoneExecutor:
         workflow_digest: str | None = None,
         model_identity: str = "deterministic-mock",
         timeout_seconds: float = 30.0,
+        cancellation: Event | None = None,
     ) -> None:
         self.kernel = kernel
         self.stage_id = stage_id
@@ -57,6 +59,7 @@ class Stage2ZoneExecutor:
         self.workflow_digest = workflow_digest or sha256_bytes(self.plan.visual_plan_bytes)
         self.model_identity = model_identity
         self.timeout_seconds = timeout_seconds
+        self.cancellation = cancellation
 
     def execute_next(self) -> Stage2ExecutionResult:
         committed = self._committed()
@@ -108,6 +111,7 @@ class Stage2ZoneExecutor:
             artifact_role="LANDSCAPE",
             max_attempts=1,
             metadata_binder=bind_stage2_commitments,
+            cancellation=self.cancellation,
         )
         if result.status == "AUTHORITATIVE" and result.digest is not None:
             validate_stage2_commitments(

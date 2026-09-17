@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "GREETING",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "greeting_004_06",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "Inside a cozy living room with warm lighting",
+      "text": "Hồng Nhung đặt túi xách lên ghế, cảm thấy hơi mệt."
+    }
+  ]
+}
