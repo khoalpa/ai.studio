@@ -78,6 +78,32 @@ def test_studio_navigation_and_overlays_preserve_accessibility_contract() -> Non
     assert "@media (forced-colors: active)" in ux_css
 
 
+def test_studio_shared_ui_tokens_and_mobile_dialog_contract() -> None:
+    ui = Path(__file__).parents[2] / "ui" / "dist"
+    ux_css = (ui / "ux.css").read_text(encoding="utf-8")
+
+    shared_tokens = (
+        "--state-info:",
+        "--state-success:",
+        "--state-warning:",
+        "--state-danger:",
+        "--state-active:",
+        "--focus-ring:",
+        "--control-height:",
+        "--radius-control:",
+        "--space-4:",
+        "--motion-fast:",
+    )
+    for token in shared_tokens:
+        assert token in ux_css
+
+    assert "min-height: var(--control-height)" in ux_css
+    assert "max-height: calc(100dvh - 28px)" in ux_css
+    assert ".dialog-actions .primary-button" in ux_css
+    assert "position: sticky" in ux_css
+    assert "@media (prefers-reduced-motion: reduce)" in ux_css
+
+
 def test_serial_presets_are_partitioned_by_content_profile() -> None:
     ui = Path(__file__).parents[2] / "ui" / "dist"
     html = (ui / "index.html").read_text(encoding="utf-8")

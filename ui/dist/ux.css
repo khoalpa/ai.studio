@@ -1,4 +1,93 @@
-/* Runtime truth states and narrow-dialog containment. */
+/* Shared UI/UX foundation. Keep semantic state in one place so runtime views,
+   dialogs and future workspace screens render the same truth consistently. */
+:root {
+  --background: var(--bg);
+  --surface-raised: var(--surface-2);
+  --surface-interactive: var(--surface-3);
+  --border-subtle: var(--border);
+  --text-primary: var(--text);
+  --text-secondary: var(--muted);
+  --state-info: var(--blue);
+  --state-success: var(--green);
+  --state-warning: var(--amber);
+  --state-danger: var(--red);
+  --state-active: var(--violet);
+  --focus-ring: #c7beff;
+  --focus-shadow: #0b0d12;
+  --control-height: 44px;
+  --radius-control: 10px;
+  --radius-panel: var(--radius);
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --motion-fast: 160ms;
+  --motion-standard: 240ms;
+}
+
+html {
+  scroll-padding-top: calc(var(--topbar) + var(--space-3));
+}
+
+body {
+  line-height: 1.5;
+}
+
+.nav-item,
+.primary-button,
+.secondary-button,
+.icon-button,
+.mobile-menu,
+.dialog-close,
+.close-inspector,
+.source-tabs button,
+.segmented button,
+.execution-filters button,
+.event-filters button {
+  min-height: var(--control-height);
+}
+
+.primary-button,
+.secondary-button,
+.nav-item,
+.story-dialog label,
+.search-box input,
+.placeholder-view p,
+.page-heading p,
+.runtime-banner {
+  font-size: 0.875rem;
+}
+
+.card,
+.metric,
+.system-card,
+.current-job,
+.package-file,
+.execution-current-grid > div,
+.result-metrics > div {
+  border-color: var(--border-subtle);
+}
+
+.status-pill.running,
+.transaction-status.running,
+.transaction-status.active {
+  color: var(--state-active);
+}
+
+.status-pill.passed,
+.transaction-status.pass,
+.transaction-status.committed {
+  color: var(--state-success);
+}
+
+.status-pill.failed,
+.transaction-status.fail,
+.transaction-status.failed,
+.badge.fail {
+  color: var(--state-danger);
+}
+
 .skip-link {
   background: var(--text);
   border-radius: 0 0 8px 8px;
@@ -10,7 +99,7 @@
   position: fixed;
   top: 0;
   transform: translateY(-120%);
-  transition: transform 0.16s ease;
+  transition: transform var(--motion-fast) ease;
   z-index: 200;
 }
 
@@ -19,12 +108,14 @@
 }
 
 :where(button, a, input, select, textarea, summary):focus-visible {
-  outline: 3px solid #b9adff;
+  outline: 3px solid var(--focus-ring);
   outline-offset: 3px;
+  box-shadow: 0 0 0 5px var(--focus-shadow);
 }
 
 button:disabled {
   cursor: not-allowed;
+  filter: saturate(0.55);
 }
 
 .workspace-view:focus {
@@ -37,6 +128,14 @@ button:disabled {
 
 .icon-button:disabled {
   opacity: 0.42;
+}
+
+[aria-disabled="true"],
+button:disabled,
+input:disabled,
+select:disabled,
+textarea:disabled {
+  opacity: 0.52;
 }
 
 .status-dot.unknown {
@@ -73,7 +172,9 @@ button:disabled {
 
 .story-dialog-wide {
   max-width: calc(100vw - 28px);
+  max-height: calc(100dvh - 28px);
   overflow-x: hidden;
+  overflow-y: auto;
 }
 
 .story-dialog-wide form,
@@ -92,11 +193,67 @@ button:disabled {
   .runtime-retry {
     width: 100%;
   }
+
+  .story-dialog {
+    border-radius: 14px;
+    max-height: calc(100dvh - 16px);
+    width: calc(100vw - 16px);
+  }
+
+  .story-dialog form {
+    padding: var(--space-4);
+  }
+
+  .dialog-actions {
+    background: var(--surface);
+    bottom: 0;
+    flex-wrap: wrap;
+    margin: var(--space-4) calc(var(--space-4) * -1) calc(var(--space-4) * -1);
+    padding: var(--space-3) var(--space-4) var(--space-4);
+    position: sticky;
+  }
+
+  .dialog-actions .primary-button {
+    flex: 1 0 100%;
+    order: -1;
+  }
+
+  .dialog-actions .secondary-button {
+    flex: 1;
+  }
+
+  .welcome-screen {
+    align-items: start;
+    overflow-y: auto;
+    padding: var(--space-3);
+  }
+
+  .welcome-card {
+    margin-block: var(--space-3);
+  }
 }
 
 @media (forced-colors: active) {
   .status-dot,
   .status-pill i {
     border: 1px solid currentColor;
+  }
+
+  .primary-button,
+  .secondary-button,
+  .nav-item[aria-current="page"],
+  .profile-card input:checked + span {
+    border: 2px solid currentColor;
+  }
+
+  :where(button, a, input, select, textarea, summary):focus-visible {
+    box-shadow: none;
+    outline-color: Highlight;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skip-link {
+    transition: none;
   }
 }
