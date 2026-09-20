@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "OPENING",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "opening_003_02",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "Trong góc phòng nhỏ, trên bàn làm việc",
+      "text": "Trong phong bì niêm kín có câu hỏi: 'Đây ai gửi và tại sao?'"
+    }
+  ]
+}

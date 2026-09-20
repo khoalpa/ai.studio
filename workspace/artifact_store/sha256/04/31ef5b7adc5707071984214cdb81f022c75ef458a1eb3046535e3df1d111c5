@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "INTRODUCTION",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "introduction_003_02",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "Trong ngôi nhà nhỏ, ánh sáng rọi qua cửa sổ tạo nên màu sắc dịu nhẹ.",
+      "text": "Cảm xúc nhỏ bắt đầu nhận ra vẻ đẹp của sự chia sẻ và giao lưu."
+    }
+  ]
+}

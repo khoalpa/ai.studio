@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "CLIMAX",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "climax_001_02",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "Trong ngôi nhà nhỏ này, ánh sáng yếu ớt từ cửa sổ chiếu rải trên các đồ vật.",
+      "text": "Cảm xúc nhỏ đã học cách chia sẻ và giao tiếp với nhau, mở ra nhiều cơ hội giao lưu và kết bạn. Bây giờ, họ đã sẵn sàng để bước vào một cuộc phiêu lưu mới."
+    }
+  ]
+}

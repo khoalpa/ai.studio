@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "FALLING",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "falling_002_01",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "Trong ngôi nhà nhỏ này, không gian yên tĩnh và nhẹ nhàng.",
+      "text": "Cảm xúc nhỏ bắt đầu hiểu rằng, chia sẻ và giao tiếp không chỉ là một cách để kết bạn, mà còn là một cách để tìm hiểu về bản thân."
+    }
+  ]
+}

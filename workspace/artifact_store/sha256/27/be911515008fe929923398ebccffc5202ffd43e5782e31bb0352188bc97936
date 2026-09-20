@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "OPENING",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "opening_004_03",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "trong ngôi nhà nhỏ, ánh sáng mờ mờ từ bên ngoài",
+      "text": "Cảm xúc nhỏ ngồi trên chiếc ghế trống cạnh cửa sổ, nhìn ra ngoài, tự hỏi liệu có ai đó sẽ đến thăm."
+    }
+  ]
+}

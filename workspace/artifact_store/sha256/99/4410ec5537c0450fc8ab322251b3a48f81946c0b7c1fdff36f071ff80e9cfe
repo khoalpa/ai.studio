@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "FALLING",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "falling_001_04",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "trong ngôi nhà nhỏ",
+      "text": "Cảm xúc nhỏ dần dần học cách chia sẻ và giao tiếp với nhau, mở ra nhiều cơ hội giao lưu và kết bạn."
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "OPENING",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "opening_002_03",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "Trong ngôi nhà nhỏ này, mỗi cảm xúc đều được biểu hiện qua đồ vật và màu sắc.",
+      "text": "Cảm xúc nhỏ mở ra một bức ảnh đã úa màu, tìm thấy một đồ vật biểu trưng cho cảm xúc của mình."
+    }
+  ]
+}

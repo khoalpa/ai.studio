@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "GREETING",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "greeting_002_03",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "Trong ngôi nhà nhỏ này, ánh sáng mờ ảo từ bên ngoài chiếu vào qua cửa sổ.",
+      "text": "Cảm xúc nhỏ đang ngồi trên chiếc ghế trống cạnh cửa sổ, nhìn ra ngoài, đăm chiêu."
+    }
+  ]
+}

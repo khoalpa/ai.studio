@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "FALLING",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "falling_002_02",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "Trong ngôi nhà nhỏ, các cảm xúc nhỏ dần dần học cách chia sẻ.",
+      "text": "Cảm xúc nhỏ bắt đầu trò chuyện với nhau, tạo ra nhiều tiếng cười và tiếng nói mới."
+    }
+  ]
+}

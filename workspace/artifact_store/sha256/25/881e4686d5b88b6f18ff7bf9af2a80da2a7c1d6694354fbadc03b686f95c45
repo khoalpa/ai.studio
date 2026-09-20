@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "GREETING",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "greeting_002_02",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "Trong một góc nhỏ của ngôi nhà, một bút chì cũ nằm trên bàn.",
+      "text": "Bút chì cũ kia như đang tự hỏi: 'Mình có thể làm điều gì cho ngôi nhà này?'"
+    }
+  ]
+}

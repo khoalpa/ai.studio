@@ -83,6 +83,7 @@ ZONE_ORDER = (
     "FAREWELL",
 )
 TERMINAL_SENTENCE_PUNCTUATION = (".", "!", "?", "。", "！", "？")
+_TRAILING_SENTENCE_CLOSERS = ("'", '"', "’", "”", "»", "）", "】", "〉", "》")
 _CJK_WORD_CHARACTER = re.compile(r"[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]")
 _OTHER_NON_LATIN_CHARACTER = re.compile(r"[\u3040-\u30ff\uac00-\ud7af]")
 _VIETNAMESE_DIACRITIC = re.compile(
@@ -92,8 +93,16 @@ _VIETNAMESE_DIACRITIC = re.compile(
 
 
 def has_terminal_sentence_punctuation(text: str) -> bool:
-    """Return whether *text* ends in a supported sentence terminator."""
-    return text.rstrip().endswith(TERMINAL_SENTENCE_PUNCTUATION)
+    """Return whether *text* ends in a supported sentence terminator.
+
+    A sentence may validly end with a closing quote or bracket after its
+    terminator, for example ``Cô ấy hỏi: 'Có ai ở đó?'``.  Strip only those
+    deterministic closing characters; punctuation-less prose still fails.
+    """
+    terminal = text.rstrip()
+    while terminal.endswith(_TRAILING_SENTENCE_CLOSERS):
+        terminal = terminal[:-1].rstrip()
+    return terminal.endswith(TERMINAL_SENTENCE_PUNCTUATION)
 
 
 def unicode_word_count(text: str) -> int:

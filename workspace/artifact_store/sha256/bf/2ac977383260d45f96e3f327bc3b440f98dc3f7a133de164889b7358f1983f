@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "CLIMAX",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "climax_001_03",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "trong ngôi nhà nhỏ, ánh sáng mờ mờ",
+      "text": "Cảm xúc nhỏ nhìn vào chiếc hộp gỗ, quyết định mở ra."
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "DEVELOPMENT",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "development_001_04",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "Trong ngôi nhà nhỏ này, ánh sáng mờ mờ từ cửa sổ chiếu vào.",
+      "text": "Cảm xúc nhỏ khám phá một cuốn sổ tay cũ trên kệ sách."
+    }
+  ]
+}

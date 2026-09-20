@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "OPENING",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "opening_002_02",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "Trong ngôi nhà yên bình, ánh sáng rực rỡ từ cửa sổ chiếu vào.",
+      "text": "Trẻ em tìm thấy một quyển sách nhỏ trong góc phòng hạnh phúc. "
+    }
+  ]
+}

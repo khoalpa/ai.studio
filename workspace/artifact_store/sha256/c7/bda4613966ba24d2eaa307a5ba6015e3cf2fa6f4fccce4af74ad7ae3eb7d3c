@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "CLIMAX",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "climax_005_01",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "Trong ngôi nhà nhỏ, ánh sáng yếu ả từ đèn treo xuống.",
+      "text": "Cảm xúc nhỏ đặt chiếc đồng hồ lên bàn, kim dừng lại ở nửa đêm."
+    }
+  ]
+}

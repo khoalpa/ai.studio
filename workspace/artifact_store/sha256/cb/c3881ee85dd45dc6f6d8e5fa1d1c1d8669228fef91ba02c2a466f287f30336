@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "CLIMAX",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "climax_002_04",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "Trong ngôi nhà nhỏ này, ánh sáng mờ ảo từ cửa sổ chiếu vào.",
+      "text": "Cảm xúc nhỏ cuối cùng đã tìm thấy cách chia sẻ cảm xúc của mình với nhau, mở ra một tương lai đầy hy vọng."
+    }
+  ]
+}

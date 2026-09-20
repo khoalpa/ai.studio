@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "INTRODUCTION",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "introduction_001_01",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "安静的房间，充满色彩，孩子们在这里体验和分享微小的情感。",
+      "text": "Trẻ em tìm thấy một quyển sách nhỏ trong góc phòng hạnh phúc."
+    }
+  ]
+}

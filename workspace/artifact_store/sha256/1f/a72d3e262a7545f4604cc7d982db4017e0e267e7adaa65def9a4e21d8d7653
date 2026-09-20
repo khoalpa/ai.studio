@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "DEVELOPMENT",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "development_005_02",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "Trong ngôi nhà nhỏ",
+      "text": "Cảm xúc nhỏ bắt đầu học cách chia sẻ cảm xúc thông qua đồ vật."
+    }
+  ]
+}

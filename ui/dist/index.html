@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Không gian điều phối quy trình sản xuất Audio Story chạy hoàn toàn nội bộ.">
+  <title>Audio Story Studio</title>
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg">
+  <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="./ux.css">
+</head>
+<body class="runtime-booting">
+  <a class="skip-link" href="#workspace-main">Bỏ qua điều hướng</a>
+  <section class="welcome-screen" id="welcome-screen" aria-labelledby="welcome-title">
+    <div class="welcome-card">
+      <div class="welcome-brand"><span class="brand-mark"><span></span><span></span><span></span></span><span><strong>Audio Story</strong><small>STUDIO / LOCAL</small></span></div>
+      <div class="welcome-copy"><span class="eyebrow">OFFLINE WORKSPACE</span><h1 id="welcome-title">Bắt đầu một workspace</h1><p>Tạo không gian mới hoàn toàn rỗng, hoặc tiếp tục với dữ liệu đã có trên máy này.</p></div>
+      <div class="welcome-actions">
+        <button class="welcome-action featured" id="new-workspace" type="button"><span class="welcome-action-icon">→</span><span><strong>Tiếp tục workspace hiện tại</strong><small>Workspace đã được launcher mở an toàn</small></span><b>→</b></button>
+        <button class="welcome-action" id="open-workspace-button" type="button" disabled title="Đóng Studio và chạy open_app.bat với đường dẫn workspace"><span class="welcome-action-icon">□</span><span><strong>Mở workspace khác</strong><small>Dùng open_app.bat &quot;D:\duong-dan\workspace&quot;</small></span><b>—</b></button>
+        <button class="welcome-action" id="open-story-button" type="button"><span class="welcome-action-icon">ZIP</span><span><strong>Nhập story.zip</strong><small>Kiểm định và nhập vào workspace hiện tại</small></span><b>→</b></button>
+      </div>
+      <p class="welcome-note"><i class="status-dot online"></i> Chạy cục bộ · Dữ liệu không rời khỏi máy</p>
+      <input id="story-picker" type="file" accept=".zip,application/zip" hidden>
+    </div>
+  </section>
+  <div class="app-shell">
+    <aside class="sidebar" id="primary-navigation" aria-label="Điều hướng chính">
+      <a class="brand" href="#overview" aria-label="Audio Story Studio">
+        <span class="brand-mark"><span></span><span></span><span></span></span>
+        <span><strong>Audio Story</strong><small>STUDIO / LOCAL</small></span>
+      </a>
+
+      <nav class="nav-list" aria-label="Khu vực làm việc">
+        <button class="nav-item active" data-view="overview" aria-current="page"><span class="nav-icon" aria-hidden="true">⌂</span><span>Tổng quan</span></button>
+        <button class="nav-item" data-view="story"><span class="nav-icon">≡</span><span>Nội dung</span><span class="nav-count">0</span></button>
+        <button class="nav-item" data-view="characters"><span class="nav-icon">◉</span><span>Nhân vật</span><span class="nav-count">0</span></button>
+        <button class="nav-item" data-view="visual"><span class="nav-icon">◇</span><span>Visual Bible</span></button>
+        <button class="nav-item" data-view="timeline"><span class="nav-icon">▷</span><span>Timeline</span></button>
+        <button class="nav-item" data-view="queue"><span class="nav-icon">⇅</span><span>Hàng đợi</span><span class="live-count">0</span></button>
+        <button class="nav-item" data-view="validation"><span class="nav-icon">✓</span><span>Kiểm định</span><span class="warning-count">0</span></button>
+      </nav>
+
+      <div class="sidebar-bottom">
+        <button class="nav-item" data-view="export"><span class="nav-icon">⇧</span><span>Xuất bản & sao lưu</span></button>
+        <button class="nav-item" data-view="activity"><span class="nav-icon">↺</span><span>Nhật ký hoạt động</span></button>
+        <div class="system-card">
+          <div class="system-head"><span>Hệ thống nội bộ</span><span class="runtime-health">Đang kiểm tra</span></div>
+          <div class="service"><span><i class="status-dot unknown"></i> ComfyUI</span><b>Chưa xác minh</b></div>
+          <div class="service"><span><i class="status-dot unknown"></i> llama.cpp</span><b>Chưa xác minh</b></div>
+          <div class="service"><span><i class="status-dot unknown"></i> FFmpeg</span><b>Chưa xác minh</b></div>
+        </div>
+        <button class="user-card" data-action="delete-workspace" title="Xóa workspace hiện hành">
+          <span class="avatar">LP</span>
+          <span><strong>Local Producer</strong><small>Workspace owner</small></span>
+          <span class="more">⌫</span>
+        </button>
+      </div>
+    </aside>
+
+    <main class="main-content" id="workspace-main" tabindex="-1">
+      <header class="topbar">
+        <button class="mobile-menu" aria-label="Mở điều hướng" aria-controls="primary-navigation" aria-expanded="false">☰</button>
+        <div class="breadcrumb"><span>Không gian làm việc</span><i>/</i><strong>Đang kết nối</strong></div>
+        <div class="top-actions">
+          <span class="saved"><i class="status-dot unknown"></i> Đang kiểm tra runtime</span>
+          <button class="icon-button" aria-label="Tìm kiếm — sắp có" title="Tìm kiếm chưa khả dụng" disabled>⌕</button>
+          <button class="icon-button" aria-label="Thông báo — sắp có" title="Thông báo chưa khả dụng" disabled>◌<span class="notification-dot"></span></button>
+          <button class="primary-button" data-action="package">Xem bản đóng gói <span>→</span></button>
+        </div>
+      </header>
+
+      <section class="workspace-view active" id="overview">
+        <div class="runtime-banner" id="runtime-banner" hidden></div>
+        <div class="page-heading">
+          <div>
+            <div class="eyebrow"><span class="episode-code">WORKSPACE</span><span>CHƯA CÓ DỮ LIỆU</span></div>
+            <h1>Đang kết nối runtime</h1>
+            <p>Đang đọc trạng thái workspace cục bộ…</p>
+          </div>
+          <div class="heading-actions">
+            <button class="secondary-button" title="Dùng Trung tâm kiểm định để chạy kiểm tra" disabled>Chạy kiểm tra</button>
+            <div class="heading-actions"><button class="secondary-button" data-action="delete-story">Xóa story</button><button class="primary-button" data-action="create-story">Tạo story mới <span>＋</span></button></div>
+          </div>
+        </div>
+
+        <div class="stage-rail" aria-label="Tiến độ các giai đoạn" hidden>
+          <button class="stage" data-stage="1"><span class="stage-number">01</span><span><small>STAGE 01</small><strong>Kịch bản</strong><em>Chưa bắt đầu</em></span></button>
+          <span class="stage-line"></span>
+          <button class="stage" data-stage="2"><span class="stage-number">02</span><span><small>STAGE 02</small><strong>Visual Bible</strong><em>Chưa bắt đầu</em></span></button>
+          <span class="stage-line"></span>
+          <button class="stage" data-stage="3"><span class="stage-number">03</span><span><small>STAGE 03</small><strong>Chân dung</strong><em>Chưa bắt đầu</em></span></button>
+          <span class="stage-line"></span>
+          <button class="stage" data-stage="4"><span class="stage-number">04</span><span><small>STAGE 04</small><strong>Video</strong><em>Đang khóa</em></span></button>
+        </div>
+
+        <section class="card stage-detail-card" aria-live="polite"><div class="card-header compact"><div><span class="card-kicker">CHI TIẾT TIẾN TRÌNH</span><h2 id="stage-detail-title">Chưa có workflow</h2></div><span class="status-pill" id="stage-detail-status"><i></i> Chưa bắt đầu</span></div><div class="stage-detail-summary"><strong id="stage-detail-percent">0%</strong><span id="stage-detail-count">0 / 0 tài sản</span><span id="stage-detail-updated">Chưa có dữ liệu</span></div><div class="progress-track"><span id="stage-detail-progress" style="width:0%"></span></div><div class="stage-detail-grid"><div><small>ĐANG XỬ LÝ</small><strong id="stage-detail-current">—</strong></div><div><small>ĐANG CHỜ</small><strong id="stage-detail-pending">0</strong></div><div><small>LỖI</small><strong id="stage-detail-failed">0</strong></div><div><small>GATE</small><strong id="stage-detail-gates">—</strong></div></div><div class="transaction-list" id="transaction-list"><p class="empty-inline">Chưa có transaction.</p></div></section>
+
+        <div class="dashboard-grid" hidden>
+          <section class="card production-card">
+            <div class="card-header">
+              <div><span class="card-kicker">ĐANG THỰC THI</span><h2>Chưa có stage</h2></div>
+              <span class="status-pill"><i></i> Chưa bắt đầu</span>
+            </div>
+            <div class="progress-summary"><div><strong id="live-committed">0</strong><span id="live-total">/ 0 tài sản</span></div><span id="live-percent">Chưa có dữ liệu</span></div>
+            <div class="progress-track"><span id="live-progress" style="width:0%"></span></div>
+            <div class="current-job">
+              <div class="job-visual"><div class="landscape-lines"><i></i><i></i><i></i></div><span>09</span></div>
+               <div class="job-copy"><small>CHƯA CÓ TÁC VỤ</small><h3>Không có transaction đang chạy</h3><p>Runtime chưa cung cấp dữ liệu.</p></div>
+               <div class="job-time"><strong>—</strong><small>thời gian</small></div>
+            </div>
+            <div class="queue-row">
+              <span class="queue-label"><i class="status-dot idle"></i> Tiếp theo</span>
+               <strong>Không có tài sản đang chờ</strong>
+               <span class="queue-count">Hàng đợi trống</span>
+            </div>
+          </section>
+
+          <section class="card validation-card">
+            <div class="card-header compact"><div><span class="card-kicker">CẦN XỬ LÝ</span><h2>Kiểm định</h2></div><button class="text-button" data-view-target="validation">Xem tất cả →</button></div>
+            <div class="validation-score"><div class="score-ring"><span>8<small>/10</small></span></div><div><strong>8 tài sản đã đạt</strong><p>2 mục cần xem lại trước khi đóng gói.</p></div></div>
+            <p class="empty-inline">Chưa có kết quả kiểm định.</p>
+          </section>
+
+          <section class="card activity-card">
+            <div class="card-header compact"><div><span class="card-kicker">TRỰC TIẾP</span><h2>Hoạt động gần đây</h2></div><button class="text-button" data-view-target="activity">Mở nhật ký →</button></div>
+            <ol class="activity-list"><li class="empty-inline">Chưa có sự kiện runtime.</li></ol>
+          </section>
+
+          <section class="card package-card">
+            <div class="card-header compact"><div><span class="card-kicker">GÓI HIỆN TẠI</span><h2>Chưa có package</h2></div><span class="status-pill"><i></i> Chưa xác minh</span></div>
+            <div class="package-file"><span class="zip-icon">ZIP</span><div><strong>Chưa có story.zip</strong><p>Runtime chưa cung cấp package.</p></div><button aria-label="Mở menu gói" disabled>•••</button></div>
+            <dl class="package-meta"><div><dt>SHA-256</dt><dd>—</dd></div><div><dt>Đóng gói lúc</dt><dd>—</dd></div><div><dt>Canonical</dt><dd>v3.16.13</dd></div></dl>
+            <button class="secondary-button full" data-action="package">Kiểm tra nội dung gói <span>→</span></button>
+          </section>
+        </div>
+      </section>
+
+      <section class="workspace-view" id="validation">
+        <div class="page-heading"><div><div class="eyebrow">QUALITY CONTROL</div><h1>Trung tâm kiểm định</h1><p>Chỉ các artifact có gate hiện hành đạt mới được tính vào tiến độ.</p></div><button class="primary-button" data-action="recheck">Kiểm tra lại tất cả</button></div>
+        <div class="metric-row"><div class="metric"><small>TỔNG GATE</small><strong>0</strong><span>Chưa có dữ liệu</span></div><div class="metric"><small>CẦN XỬ LÝ</small><strong>0</strong><span class="amber">Chưa có dữ liệu</span></div><div class="metric"><small>NOT VERIFIED</small><strong>0</strong><span>Chưa có dữ liệu</span></div><div class="metric"><small>ARTIFACT HIỆN HÀNH</small><strong>0</strong><span>Chưa có dữ liệu</span></div></div>
+        <section class="card table-card"><div class="table-toolbar"><div class="segmented"><button class="active">Cần xử lý <span>0</span></button><button>Đã đạt <span>0</span></button><button>Tất cả <span>0</span></button></div><label class="search-box">⌕<input type="search" placeholder="Tìm theo tên hoặc mã lỗi"></label></div>
+          <div class="validation-table" role="table">
+            <div class="table-row table-head" role="row"><span>Tài sản</span><span>Gate</span><span>Kết quả</span><span>Phát hiện</span><span></span></div>
+            <p class="empty-inline">Chưa có gate cần xử lý.</p>
+          </div>
+        </section>
+      </section>
+
+      <section class="workspace-view placeholder-view" id="story"><div class="placeholder-icon">≡</div><h1>Nội dung truyện</h1><p>Dữ liệu nội dung sẽ xuất hiện khi runtime cung cấp story hiện hành.</p><button class="primary-button" data-view-target="overview">Quay lại tổng quan</button></section>
+      <section class="workspace-view placeholder-view" id="characters"><div class="placeholder-icon">◉</div><h1>Nhân vật</h1><p>Dữ liệu nhân vật sẽ xuất hiện sau khi artifact được commit.</p><button class="primary-button" data-view-target="overview">Quay lại tổng quan</button></section>
+      <section class="workspace-view placeholder-view" id="visual"><div class="placeholder-icon">◇</div><h1>Visual Bible</h1><p id="stage2-summary">Chọn Stage 1 package để tạo 10 cảnh quan Stage 2.</p><button class="primary-button" data-action="create-stage2">Bắt đầu Stage 2</button><button class="secondary-button" data-action="create-stage3">Bắt đầu Stage 3 Portrait</button></section>
+      <section class="workspace-view placeholder-view" id="timeline"><div class="placeholder-icon">▷</div><h1>Timeline sản xuất</h1><p>Timeline sẽ mở khóa sau khi Stage 03 hoàn tất.</p><button class="primary-button" data-action="create-stage4">Dựng video Stage 4</button><button class="secondary-button" data-view-target="overview">Quay lại tổng quan</button></section>
+      <section class="workspace-view execution-view" id="queue">
+        <div class="page-heading execution-heading"><div><div class="eyebrow">RUNTIME / DETERMINISTIC PROGRESS</div><h1>Điều phối thực thi</h1><p id="queue-summary">Không có tác vụ đang chạy.</p></div><div class="heading-actions"><button class="primary-button" id="review-stage2" data-action="review-stage2" hidden>Duyệt semantic</button><button class="primary-button" id="retry-stage2" data-action="retry-stage2" hidden>Thử lại Stage 2</button><button class="secondary-button" id="cancel-job" data-action="cancel-job" hidden>Hủy tác vụ</button><button class="secondary-button" data-action="create-story">Tạo Stage 1</button></div></div>
+        <section class="card execution-hero" aria-live="polite">
+          <div class="execution-hero-head"><div><span class="card-kicker" id="execution-stage-label">CHƯA CÓ STAGE</span><h2 id="execution-title">Không có workflow đang hoạt động</h2><p id="execution-objective">Tạo Stage 1 để bắt đầu pipeline cục bộ.</p></div><span class="status-pill" id="execution-status"><i></i> IDLE</span></div>
+          <div class="execution-progress-line"><strong id="execution-percent">0%</strong><div class="progress-track"><span id="execution-progress" style="width:0%"></span></div><span id="execution-count">0 / 0 transaction</span></div>
+          <div class="execution-current-grid"><div><small>BƯỚC HIỆN TẠI</small><strong id="execution-current">—</strong><span id="execution-substep">Chưa bắt đầu</span></div><div><small>ATTEMPT</small><strong id="execution-attempt">—</strong><span id="execution-call-status">Không có generation call</span></div><div><small>THỜI GIAN</small><strong id="execution-elapsed">—</strong><span id="execution-timestamps">Chưa có dữ liệu</span></div><div><small>RUNTIME</small><strong id="execution-runtime">Local</strong><span id="execution-adapter">Offline</span></div></div>
+          <div class="execution-identifiers"><span>Workflow <button class="copy-inline" id="execution-workflow-id">—</button></span><span>Stage <button class="copy-inline" id="execution-stage-id">—</button></span><span>Job <button class="copy-inline" id="execution-job-id">—</button></span></div>
+        </section>
+        <section class="execution-layout">
+          <div class="card execution-table-card"><div class="card-header compact"><div><span class="card-kicker">TRANSACTION / ARTIFACT</span><h2>Tiến độ chi tiết</h2></div><div class="execution-filters"><button class="active" data-transaction-filter="ALL">Tất cả</button><button data-transaction-filter="ACTIVE">Đang chạy</button><button data-transaction-filter="FAILED">Lỗi</button><button data-transaction-filter="COMMITTED">Đã commit</button></div></div><div class="execution-table-head"><span>Tài sản</span><span>Trạng thái</span><span>Attempt</span><span>Thời gian</span><span>Kết quả</span></div><div id="execution-transactions" class="execution-transactions"><p class="empty-inline">Chưa có transaction.</p></div></div>
+          <div class="card execution-events-card"><div class="card-header compact"><div><span class="card-kicker">LIVE EVENTS</span><h2>Nhật ký trực tiếp</h2></div><button class="text-button" id="copy-diagnostics">Sao chép</button></div><div class="event-filters"><button class="active" data-event-filter="ALL">Tất cả</button><button data-event-filter="SUCCESS">Thành công</button><button data-event-filter="RETRY">Retry</button><button data-event-filter="ERROR">Lỗi</button></div><ol id="execution-events" class="execution-event-list"><li class="empty-inline">Chưa có sự kiện.</li></ol></div>
+        </section>
+        <section class="card execution-result" id="execution-result" hidden><div><span class="card-kicker">KẾT QUẢ STAGE</span><h2 id="execution-result-title">Stage hoàn tất</h2><p id="execution-result-summary"></p></div><div class="result-metrics"><div><small>COMMITTED</small><strong id="result-committed">0</strong></div><div><small>GATE PASS</small><strong id="result-gates">0/0</strong></div><div><small>RETRY</small><strong id="result-retries">0</strong></div><div><small>PACKAGE</small><strong id="result-package">—</strong></div></div></section>
+      </section>
+      <section class="workspace-view placeholder-view" id="export"><div class="placeholder-icon">⇧</div><h1>Xuất bản & sao lưu</h1><p id="release-readiness">Đang kiểm tra readiness…</p><button class="primary-button" data-action="package">Xem bản xuất cuối</button><button class="secondary-button" data-action="backup">Tạo backup STATE_ONLY</button></section>
+      <section class="workspace-view placeholder-view" id="activity"><div class="placeholder-icon">↺</div><h1>Nhật ký hoạt động</h1><p id="diagnostics-summary">Đang kiểm tra runtime diagnostics…</p><button class="primary-button" data-view-target="overview">Quay lại tổng quan</button></section>
+    </main>
+  </div>
+
+  <aside class="inspector" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="inspector-title" tabindex="-1">
+    <div class="inspector-head"><div><small>CHI TIẾT</small><h2 id="inspector-title">Cảnh 06</h2></div><button class="close-inspector" aria-label="Đóng">×</button></div>
+    <div class="inspector-status"><span class="issue-icon">!</span><div><strong id="inspector-status">Cần sửa</strong><p>Không ảnh hưởng artifact đã publish</p></div></div>
+    <div class="inspector-section"><h3>Phát hiện</h3><p id="inspector-detail">Chữ phát hiện ngoài vùng an toàn 7%. Cần tạo lại ảnh hoặc điều chỉnh bố cục.</p></div>
+    <div class="inspector-section"><h3>Truy nguyên</h3><dl><div><dt>Owner stage</dt><dd id="inspector-stage">—</dd></div><div><dt>Transaction</dt><dd id="inspector-transaction">—</dd></div><div><dt>Generation call</dt><dd id="inspector-call">—</dd></div><div><dt>Detector</dt><dd id="inspector-detector">—</dd></div></dl></div>
+    <div class="inspector-actions"><button class="secondary-button close-inspector">Để sau</button><button class="primary-button" data-action="retry">Tạo lại tài sản</button></div>
+  </aside>
+  <div class="overlay" aria-hidden="true"></div>
+  <dialog class="story-dialog story-dialog-wide" id="story-dialog" aria-labelledby="story-dialog-title">
+    <form id="story-form">
+      <div class="dialog-head"><div><small>STAGE 01 · THIẾT LẬP</small><h2 id="story-dialog-title">Tạo audio story mới</h2><p>Chọn premise trước, sau đó xác nhận thời lượng đọc ước tính trước khi tạo package.</p></div><button type="button" class="dialog-close" aria-label="Đóng">×</button></div>
+      <section class="story-step" id="story-setup-step">
+        <fieldset class="profile-picker"><legend>1. Profile nội dung <b>*</b></legend>
+          <label class="profile-card"><input type="radio" name="profile" value="YOUTH_SAFE"><span><strong>Youth Safe</strong><small>Trẻ em và thiếu niên 3–18 tuổi</small></span></label>
+          <label class="profile-card"><input type="radio" name="profile" value="ADULT_STANDARD"><span><strong>Adult Standard</strong><small>Truyện người lớn, chủ đề mở rộng</small></span></label>
+          <label class="profile-card"><input type="radio" name="profile" value="SERIAL_DETECTIVE"><span><strong>Serial Detective</strong><small>Trinh thám người lớn nhiều episode</small></span></label>
+        </fieldset>
+        <div class="form-grid compact-grid"><label>2. Ngôn ngữ <b>*</b><select name="language"><option value="vi">Tiếng Việt</option><option value="en">English</option></select></label>
+          <label>Tiêu đề tập truyện <small>Tuỳ chọn; nếu để trống sẽ suy ra từ premise.</small><input name="title" maxlength="120" placeholder="Ví dụ: Ngọn Đèn Sau Mưa"></label>
+          <label>Tên series <small>Tuỳ chọn; nếu để trống sẽ suy ra từ nội dung truyện.</small><input name="series" maxlength="120" placeholder="Ví dụ: Những Chuyện Sau Mưa"></label>
+          <label>Số episode <small>Truyện serial mới bắt đầu ở tập 1.</small><input name="episode" type="number" min="1" max="9999" value="1"></label></div>
+        <fieldset class="content-source"><legend>3. Nguồn nội dung <b>*</b></legend>
+          <div class="source-tabs" role="tablist"><button type="button" class="active" data-source="preset">Serial có sẵn</button><button type="button" data-source="topic">Chủ đề</button><button type="button" data-source="brief">Tóm tắt</button><button type="button" data-source="idea">Ý tưởng</button><button type="button" data-source="random">Random</button></div>
+          <input type="hidden" name="content_source" value="preset">
+          <div class="source-panel" data-panel="preset"><label>Chọn serial <select name="preset" disabled><option value="">Chọn profile nội dung trước…</option></select></label></div>
+          <div class="source-panel" data-panel="topic" hidden><label>Chủ đề <input name="story_topic" maxlength="240" placeholder="Ví dụ: lòng tin sau một hiểu lầm"></label></div>
+          <div class="source-panel" data-panel="brief" hidden><label>Tóm tắt nội dung <textarea name="content_brief" maxlength="1850" placeholder="Nhân vật, xung đột, bối cảnh và cảm xúc mong muốn…"></textarea></label></div>
+          <div class="source-panel" data-panel="idea" hidden><label>Ý tưởng cốt truyện <textarea name="plot_idea" maxlength="1850" placeholder="Một tình huống hoặc nút thắt bạn muốn câu chuyện khai thác…"></textarea></label></div>
+          <div class="source-panel" data-panel="random" hidden><p class="inline-note">Runtime sẽ chỉ random các chi tiết bạn chưa khoá, trong phạm vi profile đã chọn.</p></div>
+        </fieldset>
+        <div class="profile-options" id="youth-options" hidden><label>Nhóm tuổi <select name="age_profile"><option value="KIDS_3_6">3–6 tuổi</option><option value="KIDS_7_10" selected>7–10 tuổi</option><option value="PRETEEN_11_14">11–14 tuổi</option><option value="TEEN_15_18">15–18 tuổi</option></select></label></div>
+        <div class="profile-options" id="adult-options" hidden><label>Nhóm truyện <select name="adult_family"><option value="AUTO">Tự suy ra từ nội dung</option><option>Romance trend</option><option>Family psychology</option><option>Workplace ethics</option><option>Healing realism</option><option>Social mystery</option><option>Life reconstruction</option></select></label></div>
+        <div class="profile-options" id="serial-options" hidden><label>Chế độ episode <select name="episode_mode"><option value="START_SERIES">Bắt đầu series</option><option value="CONTINUE_SERIES" disabled>Tiếp tục series (chưa hỗ trợ)</option><option value="FINALIZE_SERIES" disabled>Kết series (chưa hỗ trợ)</option></select></label></div>
+        <details class="advanced-options"><summary>Tuỳ chọn nâng cao</summary><div class="form-grid compact-grid"><label>Seed random <small>Để trống để tạo seed mới; không xuất hiện trong package.</small><input name="seed" type="number" min="0" max="2147483647" placeholder="Random"></label><label>Truyện tham chiếu <small>Chỉ Youth/Adult; dùng để hạn chế lặp.</small><input type="file" multiple accept="application/json,.json"></label></div></details>
+      </section>
+      <section class="story-step" id="duration-step" hidden><div class="duration-confirm"><small>XÁC NHẬN THỜI LƯỢNG</small><h3 id="duration-title">Thời lượng truyện</h3><p id="duration-copy"></p><label class="duration-choice"><input type="radio" name="duration_choice" value="recommended" checked><span><strong id="duration-recommendation"></strong><small>Dùng mức đề xuất</small></span></label><label class="duration-choice"><input type="radio" name="duration_choice" value="custom"><span><strong>Tùy chỉnh</strong><small>Nhập số phút hoặc khoảng thời lượng mong muốn.</small></span></label><div class="custom-duration" hidden><label>Thời lượng mong muốn (phút)<input name="duration_minutes" type="number" inputmode="numeric"></label></div></div></section>
+      <div class="dialog-message" id="dialog-message" role="alert" hidden></div>
+      <div class="dialog-actions"><button type="button" class="secondary-button dialog-close">Hủy</button><button type="button" class="secondary-button" id="back-story-step" hidden>Quay lại</button><button type="submit" class="primary-button" id="story-submit">Tiếp tục <span>→</span></button></div>
+    </form>
+  </dialog>
+  <dialog class="story-dialog" id="review-dialog" aria-labelledby="review-dialog-title">
+    <form id="review-form">
+      <div class="dialog-head"><div><small>STAGE 02 · EXACT BYTES</small><h2 id="review-dialog-title">Duyệt semantic</h2><p>Mỗi nhận xét được server gắn với SHA-256 của đúng PNG đã commit. Chỉ 10 mục PASS mới mở khóa package.</p></div><button type="button" class="review-dialog-close" aria-label="Đóng">×</button></div>
+      <div id="review-assets" class="review-assets"></div>
+      <div class="dialog-message" id="review-dialog-message" role="alert" hidden></div>
+      <div class="dialog-actions"><button type="button" class="secondary-button" id="run-vlm-review">Chạy Qwen VLM local</button><button type="button" class="secondary-button review-dialog-close">Hủy</button><button type="submit" class="primary-button">Xác nhận 10 assessment <span>→</span></button></div>
+    </form>
+  </dialog>
+  <dialog class="story-dialog" id="stage2-dialog" aria-labelledby="stage2-dialog-title">
+    <form id="stage2-form">
+      <div class="dialog-head"><div><small>STAGE 02</small><h2 id="stage2-dialog-title">Tạo Visual Bible</h2><p>Để trống đường dẫn để dùng package Stage 1 vừa tạo trong phiên này.</p></div><button type="button" class="stage2-dialog-close" aria-label="Đóng">×</button></div>
+      <label>Stage 1 package<input name="source_package" placeholder="D:\workspace\outputs\...\story.zip"></label>
+      <label class="stage2-mode">Chế độ thực thi<select name="execution_mode"><option value="COMFYUI">ComfyUI local production</option></select><small id="stage2-mode-hint">Tạo ảnh bằng model local ComfyUI và kiểm định bằng VLM local.</small></label>
+      <div class="dialog-message" id="stage2-dialog-message" role="alert" hidden></div>
+      <div class="dialog-actions"><button type="button" class="secondary-button stage2-dialog-close">Hủy</button><button type="submit" class="primary-button">Đưa vào hàng đợi <span>→</span></button></div>
+    </form>
+  </dialog>
+  <div class="toast" role="status" aria-live="polite"><span>✓</span><p></p></div>
+  <script src="./app.js"></script>
+</body>
+</html>

@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "GREETING",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "greeting_003_03",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "inside the house of emotions, a colorful and peaceful space",
+      "text": "Trẻ em bước vào ngôi nhà, cảm giác tò mò và phấn khích."
+    }
+  ]
+}

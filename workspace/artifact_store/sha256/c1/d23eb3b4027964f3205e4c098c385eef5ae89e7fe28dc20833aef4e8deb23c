@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "DEVELOPMENT",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "development_004_01",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "Trong ngôi nhà nhỏ, các cảm xúc nhỏ đang học cách chia sẻ và giao tiếp.",
+      "text": "Cảm xúc nhỏ đặt hộp gỗ nhỏ lên bàn, thử nghiệm cách nó phản ứng."
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "DEVELOPMENT",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "development_005_01",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "Trong ngôi nhà nhỏ, ánh sáng mờ mịt từ cửa sổ.",
+      "text": "Cảm xúc nhỏ bắt đầu học cách chia sẻ cảm xúc của mình với nhau, tạo ra nhiều cơ hội giao lưu và kết bạn."
+    }
+  ]
+}

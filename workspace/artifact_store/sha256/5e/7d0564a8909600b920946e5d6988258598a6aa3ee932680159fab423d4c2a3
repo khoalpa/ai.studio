@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "OPENING",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "opening_002_02",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "trong ngôi nhà nhỏ, ánh sáng mờ ảo",
+      "text": "Cảm xúc nhỏ mở ra cuốn sổ tay cũ, tìm kiếm thông tin về các đồ vật biểu trưng cho cảm xúc của mình."
+    }
+  ]
+}

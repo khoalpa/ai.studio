@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "INTRODUCTION",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "introduction_005_01",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "Trong ngôi nhà nhỏ này, ánh sáng rực rỡ từ chiếc đèn treo trên trần.",
+      "text": "Cảm xúc nhỏ cầm tay nhau, bước vào phòng khách trang trí bằng đèn lồng màu sắc."
+    }
+  ]
+}

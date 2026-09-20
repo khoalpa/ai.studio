@@ -5,8 +5,8 @@ from __future__ import annotations
 import hashlib
 import json
 import mimetypes
-import socket
 import shutil
+import socket
 import subprocess
 import threading
 import time
@@ -119,6 +119,7 @@ def build_handler(
                             "stage2": "POST /api/v1/stage2",
                             "stage3": "POST /api/v1/stage3",
                             "stage4": "POST /api/v1/stage4",
+                            "retry_asset": "POST /api/v1/transactions/{transaction_id}/retry",
                         },
                     },
                 )
@@ -236,6 +237,12 @@ def build_handler(
                 job_id = path.removeprefix("/api/v1/jobs/").removesuffix("/retry")
                 self._command_result(
                     lambda: command_runner.retry_stage2(job_id), HTTPStatus.ACCEPTED
+                )
+                return
+            if path.startswith("/api/v1/transactions/") and path.endswith("/retry"):
+                transaction_id = path.removeprefix("/api/v1/transactions/").removesuffix("/retry")
+                self._command_result(
+                    lambda: command_runner.retry_stage1_asset(transaction_id), HTTPStatus.ACCEPTED
                 )
                 return
             if path.startswith("/api/v1/jobs/") and path.endswith("/semantic-review"):

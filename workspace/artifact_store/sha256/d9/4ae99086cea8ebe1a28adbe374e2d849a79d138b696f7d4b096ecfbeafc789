@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "CLIMAX",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "climax_001_02",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "Trong ngôi nhà nhỏ, giữa các đồ vật biểu trưng cho cảm xúc",
+      "text": "Cảm xúc nhỏ cùng nhau thảo luận về cách chia sẻ cảm xúc mới."
+    }
+  ]
+}

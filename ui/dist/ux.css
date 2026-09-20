@@ -1,0 +1,102 @@
+/* Runtime truth states and narrow-dialog containment. */
+.skip-link {
+  background: var(--text);
+  border-radius: 0 0 8px 8px;
+  color: var(--background, #0b0d12);
+  font-size: 0.75rem;
+  font-weight: 700;
+  left: 16px;
+  padding: 10px 14px;
+  position: fixed;
+  top: 0;
+  transform: translateY(-120%);
+  transition: transform 0.16s ease;
+  z-index: 200;
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+}
+
+:where(button, a, input, select, textarea, summary):focus-visible {
+  outline: 3px solid #b9adff;
+  outline-offset: 3px;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+.workspace-view:focus {
+  outline: none;
+}
+
+.nav-item[aria-current="page"] {
+  color: var(--text);
+}
+
+.icon-button:disabled {
+  opacity: 0.42;
+}
+
+.status-dot.unknown {
+  background: #737c8c;
+  box-shadow: none;
+}
+
+.status-dot.offline {
+  background: var(--red);
+  box-shadow: none;
+}
+
+.runtime-banner-action {
+  align-items: center;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+}
+
+.runtime-retry {
+  flex: 0 0 auto;
+}
+
+.runtime-booting .stage-detail-card,
+.runtime-offline .stage-detail-card {
+  opacity: 0.72;
+}
+
+.runtime-offline [data-action="create-story"],
+.runtime-offline #open-story-button {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.story-dialog-wide {
+  max-width: calc(100vw - 28px);
+  overflow-x: hidden;
+}
+
+.story-dialog-wide form,
+.story-step,
+.story-step fieldset,
+.profile-picker > * {
+  min-width: 0;
+}
+
+@media (max-width: 520px) {
+  .runtime-banner-action {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .runtime-retry {
+    width: 100%;
+  }
+}
+
+@media (forced-colors: active) {
+  .status-dot,
+  .status-pill i {
+    border: 1px solid currentColor;
+  }
+}

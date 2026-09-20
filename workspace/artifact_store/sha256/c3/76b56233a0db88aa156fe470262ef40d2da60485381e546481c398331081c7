@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "GREETING",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "greeting_002_04",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "Trong ngôi nhà nhỏ, ánh sáng mờ mờ từ cửa sổ",
+      "text": "Cảm xúc nhỏ bước vào căn phòng đầy màu sắc, từng đồ vật tỏa ra cảm xúc riêng."
+    }
+  ]
+}

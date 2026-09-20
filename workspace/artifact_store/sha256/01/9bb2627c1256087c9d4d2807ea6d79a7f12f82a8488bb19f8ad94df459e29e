@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "CLIMAX",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "climax_004_04",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "Trong ngôi nhà nhỏ, các cảm xúc nhỏ tụ tập quanh phong bì niêm kín.",
+      "text": "Cảm xúc nhỏ quyết định mở phong bì, lộ ra một cách chia sẻ mới."
+    }
+  ]
+}

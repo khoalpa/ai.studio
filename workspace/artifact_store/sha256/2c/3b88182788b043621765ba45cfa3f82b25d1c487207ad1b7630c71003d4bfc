@@ -1,0 +1,25 @@
+{
+  "schema_version": "1.0",
+  "phase": "plan",
+  "status": "PASS",
+  "payload": {
+    "premise": "Ngôi nhà của những cảm xúc nhỏ.",
+    "beats": [
+      {
+        "description": "Trong ngôi nhà nhỏ này, mỗi cảm xúc đều được biểu hiện qua đồ vật và màu sắc.",
+        "character": "Cảm xúc nhỏ",
+        "actions": "Các cảm xúc nhỏ sống trong ngôi nhà và biểu hiện thông qua các đồ vật và màu sắc."
+      },
+      {
+        "description": "Mỗi cảm xúc có một màu sắc đặc biệt và một đồ vật biểu trưng cho nó.",
+        "character": "Cảm xúc nhỏ",
+        "actions": "Các cảm xúc nhỏ đều có màu sắc riêng và đồ vật biểu trưng cho cảm xúc của mình."
+      },
+      {
+        "description": "Ngày một, cảm xúc nhỏ dần dần học cách chia sẻ và giao tiếp với nhau.",
+        "character": "Cảm xúc nhỏ",
+        "actions": "Các cảm xúc nhỏ học cách chia sẻ và giao tiếp với nhau, mở ra nhiều cơ hội giao lưu và kết bạn."
+      }
+    ]
+  }
+}

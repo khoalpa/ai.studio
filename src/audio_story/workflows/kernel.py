@@ -66,25 +66,65 @@ class WorkflowKernel:
 
     def delete_workflow(self, workflow_id: str) -> tuple[str, ...]:
         with self.db.transaction() as connection:
-            if connection.execute("SELECT 1 FROM workflow_runs WHERE id=?", (workflow_id,)).fetchone() is None:
+            if (
+                connection.execute(
+                    "SELECT 1 FROM workflow_runs WHERE id=?", (workflow_id,)
+                ).fetchone()
+                is None
+            ):
                 raise KernelError("RK024_WORKFLOW_NOT_FOUND", "workflow was not found")
-            stage_ids = [str(r[0]) for r in connection.execute("SELECT id FROM stage_runs WHERE workflow_id=?", (workflow_id,))]
-            transaction_ids = [str(r[0]) for r in connection.execute("SELECT t.id FROM asset_transactions t JOIN stage_runs s ON s.id=t.stage_run_id WHERE s.workflow_id=?", (workflow_id,))]
-            paths = tuple(str(r[0]) for r in connection.execute("SELECT DISTINCT a.relative_path FROM artifacts a JOIN artifact_bindings b ON b.artifact_id=a.id JOIN asset_transactions t ON t.id=b.transaction_id JOIN stage_runs s ON s.id=t.stage_run_id WHERE s.workflow_id=?", (workflow_id,)))
+            stage_ids = [
+                str(r[0])
+                for r in connection.execute(
+                    "SELECT id FROM stage_runs WHERE workflow_id=?", (workflow_id,)
+                )
+            ]
+            transaction_ids = [
+                str(r[0])
+                for r in connection.execute(
+                    "SELECT t.id FROM asset_transactions t JOIN stage_runs s ON s.id=t.stage_run_id WHERE s.workflow_id=?",
+                    (workflow_id,),
+                )
+            ]
+            paths = tuple(
+                str(r[0])
+                for r in connection.execute(
+                    "SELECT DISTINCT a.relative_path FROM artifacts a JOIN artifact_bindings b ON b.artifact_id=a.id JOIN asset_transactions t ON t.id=b.transaction_id JOIN stage_runs s ON s.id=t.stage_run_id WHERE s.workflow_id=?",
+                    (workflow_id,),
+                )
+            )
             if stage_ids:
                 marks = ",".join("?" for _ in stage_ids)
-                for table in ("studio_semantic_assessments", "studio_stage2_runs", "cross_file_gate_results", "gate_results", "events"):
-                    connection.execute(f"DELETE FROM {table} WHERE stage_run_id IN ({marks})", stage_ids)
+                for table in (
+                    "studio_semantic_assessments",
+                    "studio_stage2_runs",
+                    "cross_file_gate_results",
+                    "gate_results",
+                    "events",
+                ):
+                    connection.execute(
+                        f"DELETE FROM {table} WHERE stage_run_id IN ({marks})", stage_ids
+                    )
             if transaction_ids:
                 marks = ",".join("?" for _ in transaction_ids)
-                for table, column in (("image_artifact_authority", "transaction_id"), ("image_packages", "package_transaction_id"), ("artifact_bindings", "transaction_id"), ("generation_calls", "transaction_id"), ("asset_transactions", "id")):
-                    connection.execute(f"DELETE FROM {table} WHERE {column} IN ({marks})", transaction_ids)
+                for table, column in (
+                    ("image_artifact_authority", "transaction_id"),
+                    ("image_packages", "package_transaction_id"),
+                    ("artifact_bindings", "transaction_id"),
+                    ("generation_calls", "transaction_id"),
+                    ("asset_transactions", "id"),
+                ):
+                    connection.execute(
+                        f"DELETE FROM {table} WHERE {column} IN ({marks})", transaction_ids
+                    )
             if paths:
                 marks = ",".join("?" for _ in paths)
                 connection.execute(f"DELETE FROM artifacts WHERE relative_path IN ({marks})", paths)
             connection.execute("DELETE FROM events WHERE workflow_id=?", (workflow_id,))
             connection.execute("DELETE FROM studio_stage2_runs WHERE workflow_id=?", (workflow_id,))
-            connection.execute("DELETE FROM cross_file_gate_results WHERE workflow_id=?", (workflow_id,))
+            connection.execute(
+                "DELETE FROM cross_file_gate_results WHERE workflow_id=?", (workflow_id,)
+            )
             connection.execute("DELETE FROM stage_runs WHERE workflow_id=?", (workflow_id,))
             connection.execute("DELETE FROM workflow_runs WHERE id=?", (workflow_id,))
             return paths

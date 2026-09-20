@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "OPENING",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "opening_003_02",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "trong ngôi nhà nhỏ",
+      "text": "Trong góc phòng, một phong bì niêm kín nằm trên bàn, gợi lên một câu hỏi: 'Đây là ai gửi và tại sao?'"
+    }
+  ]
+}

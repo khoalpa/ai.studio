@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "DEVELOPMENT",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "development_005_04",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "Trong ngôi nhà nhỏ,",
+      "text": "cảm xúc nhỏ tìm thấy một cuốn sách màu xanh lá cây, mở ra nhiều bí ẩn về cảm xúc."
+    }
+  ]
+}

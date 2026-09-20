@@ -1,6 +1,6 @@
 import pytest
 
-from audio_story.validation.stage1 import ZONE_ORDER
+from audio_story.validation.stage1 import ZONE_ORDER, has_terminal_sentence_punctuation
 from audio_story.validation.strict_json import OrderedObject
 from audio_story.workflows.stage1_zone_generation import (
     aggregate_zone_payloads,
@@ -118,6 +118,24 @@ def test_zone_payload_accepts_cjk_terminal_sentence_punctuation() -> None:
     )
 
     assert story["outline"]["greeting"] == "欢迎来到故事世界。"
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "Cô ấy hỏi: 'Có ai ở đó?'",
+        'He said, "Wait!"',
+        "Cô ấy tìm thấy ghi chú (và mỉm cười).",
+        "Anh khép sổ lại (thật nhẹ).",
+    ],
+)
+def test_terminal_sentence_punctuation_accepts_closed_quotes_and_brackets(text: str) -> None:
+    assert has_terminal_sentence_punctuation(text)
+
+
+@pytest.mark.parametrize("text", ["Cô ấy hỏi: 'Có ai ở đó'", "Anh khép sổ lại)"])
+def test_terminal_sentence_punctuation_rejects_a_closer_without_terminator(text: str) -> None:
+    assert not has_terminal_sentence_punctuation(text)
 
 
 def test_zone_payload_counts_each_cjk_ideograph_for_its_word_budget() -> None:

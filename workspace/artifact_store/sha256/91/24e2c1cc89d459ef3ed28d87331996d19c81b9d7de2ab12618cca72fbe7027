@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "CLIMAX",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "climax_005_04",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "Trong ngôi nhà nhỏ, ánh sáng mờ mờ từ cửa sổ chiếu vào.",
+      "text": "Cảm xúc nhỏ quyết định chia sẻ cảm xúc của mình với mọi người."
+    }
+  ]
+}

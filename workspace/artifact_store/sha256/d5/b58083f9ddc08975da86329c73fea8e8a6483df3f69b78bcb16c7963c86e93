@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "INTRODUCTION",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "introduction_005_02",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "trong ngôi nhà nhỏ",
+      "text": "Mỗi cảm xúc nhỏ dần dần học cách chia sẻ và giao tiếp với nhau, mở ra nhiều cơ hội giao lưu và kết bạn."
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "CLIMAX",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "climax_005_02",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "trong ngôi nhà nhỏ, ánh sáng mờ ảo",
+      "text": "Cảm xúc nhỏ nắm chặt tay nhau, cùng nhau bước vào một tương lai đầy hy vọng và niềm vui."
+    }
+  ]
+}

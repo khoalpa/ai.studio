@@ -6,13 +6,43 @@ from pathlib import Path
 import pytest
 
 from audio_story.domain.state import CallStatus, DetectorClass, GateStatus
-from audio_story.studio.server import StudioServerError, serve_studio
 from audio_story.studio.instance_lock import StudioInstanceLock, StudioInstanceLockError
+from audio_story.studio.server import StudioServerError, serve_studio
 from audio_story.studio.snapshot import StudioSnapshotService
 from audio_story.workflows import WorkflowKernel
 
 DIGEST = "a" * 64
 CAPSULE = "b" * 64
+
+
+def test_studio_runtime_states_never_ship_demo_story_data() -> None:
+    ui = Path(__file__).parents[2] / "ui" / "dist"
+    html = (ui / "index.html").read_text(encoding="utf-8")
+    javascript = (ui / "app.js").read_text(encoding="utf-8")
+    ux_css = (ui / "ux.css").read_text(encoding="utf-8")
+
+    assert 'class="runtime-booting"' in html
+    assert 'href="./ux.css"' in html
+    assert "function setRuntimeState(state, detail = '')" in javascript
+    assert "setRuntimeState('OFFLINE')" in javascript
+    assert "setRuntimeState('EMPTY'" in javascript
+    assert "setRuntimeState('LIVE'" in javascript
+    assert "runtimeRefreshInFlight" in javascript
+    assert "document.hidden || runtimeState === 'OFFLINE'" in javascript
+    assert ".runtime-banner-action" in ux_css
+    assert ".story-dialog-wide" in ux_css
+
+    demo_values = (
+        "Tiếng vọng dưới lòng hồ",
+        "Bến thuyền trong sương sớm",
+        "Đường hầm thoát nước",
+        "Hồ sơ số 07",
+        "8f3c74b1d8968ce091a2",
+        "warning-sign.png",
+        "lakeside-path.png",
+    )
+    for value in demo_values:
+        assert value not in html
 
 
 def test_execution_result_is_hidden_and_reset_before_stage_completion() -> None:
@@ -24,6 +54,28 @@ def test_execution_result_is_hidden_and_reset_before_stage_completion() -> None:
     assert "if (result.hidden)" in javascript
     assert "setText('#execution-result-title', 'Chưa có kết quả Stage')" in javascript
     assert "setText('#execution-result-summary', 'Stage chưa kết thúc.')" in javascript
+
+
+def test_studio_navigation_and_overlays_preserve_accessibility_contract() -> None:
+    ui = Path(__file__).parents[2] / "ui" / "dist"
+    html = (ui / "index.html").read_text(encoding="utf-8")
+    javascript = (ui / "app.js").read_text(encoding="utf-8")
+    ux_css = (ui / "ux.css").read_text(encoding="utf-8")
+
+    assert 'class="skip-link" href="#workspace-main"' in html
+    assert 'id="workspace-main" tabindex="-1"' in html
+    assert 'aria-controls="primary-navigation" aria-expanded="false"' in html
+    assert 'role="dialog" aria-modal="true"' in html
+    assert 'aria-labelledby="story-dialog-title"' in html
+    assert 'aria-labelledby="review-dialog-title"' in html
+    assert 'aria-labelledby="stage2-dialog-title"' in html
+    assert html.count('role="alert"') == 3
+    assert "item.setAttribute('aria-current', 'page')" in javascript
+    assert "mobileMenu.setAttribute('aria-expanded', String(open))" in javascript
+    assert "lastInspectorTrigger?.isConnected" in javascript
+    assert "event.key === 'Tab' && inspector.classList.contains('open')" in javascript
+    assert ":focus-visible" in ux_css
+    assert "@media (forced-colors: active)" in ux_css
 
 
 def test_serial_presets_are_partitioned_by_content_profile() -> None:

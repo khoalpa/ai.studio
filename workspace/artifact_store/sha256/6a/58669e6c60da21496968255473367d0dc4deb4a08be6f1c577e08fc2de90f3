@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "DEVELOPMENT",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "development_001_01",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "trong ngôi nhà nhỏ, bên cạnh cửa sổ",
+      "text": "Chiếc ghế trống làm lộ ra một bức tranh nhỏ, vẽ một cảm xúc nhỏ đang cười."
+    }
+  ]
+}

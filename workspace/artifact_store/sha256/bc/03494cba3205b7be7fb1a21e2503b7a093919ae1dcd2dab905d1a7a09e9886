@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "CLIMAX",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "climax_001_05",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "Trong ngôi nhà nhỏ, ánh sáng yếu ớt từ chiếc đèn treo trên trần.",
+      "text": "Cảm xúc nhỏ quyết định chia sẻ cảm xúc của mình với nhau, mở ra một trang mới trong cuộc sống của họ."
+    }
+  ]
+}

@@ -82,7 +82,10 @@ WORKFLOW_TRANSITIONS = {
         WorkflowStatus.COMPLETED,
     },
     WorkflowStatus.WAITING_INPUT: {WorkflowStatus.RUNNING, WorkflowStatus.FAILED},
-    WorkflowStatus.FAILED: set(),
+    # A user can explicitly retry a failed, non-terminal asset.  The retry
+    # keeps its transaction and generation-call history rather than creating a
+    # new workflow, so it must be able to return the workflow to RUNNING.
+    WorkflowStatus.FAILED: {WorkflowStatus.RUNNING},
     WorkflowStatus.COMPLETED: set(),
 }
 
@@ -92,7 +95,9 @@ STAGE_TRANSITIONS = {
     StageStatus.VALIDATING: {StageStatus.PACKAGING, StageStatus.FAIL},
     StageStatus.PACKAGING: {StageStatus.PASS, StageStatus.FAIL},
     StageStatus.PASS: set(),
-    StageStatus.FAIL: set(),
+    # As above, this transition is used only by the explicit retry command for
+    # a FAILED_RETRYABLE transaction.
+    StageStatus.FAIL: {StageStatus.GENERATING},
 }
 
 

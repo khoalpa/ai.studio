@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import os
 import uuid
+from contextlib import suppress
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -51,17 +52,13 @@ class StudioInstanceLock:
                     current = json.loads(path.read_text(encoding="utf-8"))
                     owner_pid = int(current["pid"])
                 except (OSError, ValueError, KeyError, TypeError, json.JSONDecodeError) as exc:
-                    raise StudioInstanceLockError(
-                        f"UI014_WORKSPACE_LOCK_INVALID: {path}"
-                    ) from exc
+                    raise StudioInstanceLockError(f"UI014_WORKSPACE_LOCK_INVALID: {path}") from exc
                 if _pid_is_alive(owner_pid):
                     raise StudioInstanceLockError(
                         f"UI015_WORKSPACE_ALREADY_OPEN: PID {owner_pid} owns {root}"
-                    )
-                try:
+                    ) from None
+                with suppress(FileNotFoundError):
                     path.unlink()
-                except FileNotFoundError:
-                    pass
                 continue
             try:
                 os.write(descriptor, encoded)
@@ -77,7 +74,5 @@ class StudioInstanceLock:
         except (OSError, json.JSONDecodeError):
             return
         if current.get("token") == self.token:
-            try:
+            with suppress(FileNotFoundError):
                 self.path.unlink()
-            except FileNotFoundError:
-                pass

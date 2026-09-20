@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "OPENING",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "opening_003_03",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "Trong phòng khách nhỏ, ánh sáng vàng từ chiếc đèn bàn phản chiếu trên bức tranh cũ.",
+      "text": "Cảm xúc 1: Rối bời, khi có nhiều suy nghĩ và khó tập trung."
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "GREETING",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "greeting_004_01",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "Trong phòng khách nhỏ, ánh sáng mờ mờ qua rèm cửa.",
+      "text": "Cảm xúc nhỏ tìm thấy chiếc hộp gỗ cũ kỹ đặt trên kệ."
+    }
+  ]
+}

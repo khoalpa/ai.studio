@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "OPENING",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "opening_003_03",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "Trong một căn phòng hạnh phúc",
+      "text": "Trẻ em nhặt lên một bông hoa nhỏ, cảm thấy hạnh phúc."
+    }
+  ]
+}

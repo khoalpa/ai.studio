@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "INTRODUCTION",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "introduction_001_02",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "Trong ngôi nhà yên bình",
+      "text": "Trẻ em tìm thấy một quyển sách nhỏ trong góc phòng hạnh phúc."
+    }
+  ]
+}

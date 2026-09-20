@@ -10,6 +10,8 @@ from pathlib import Path
 import pytest
 
 from audio_story.adapters.image import ComfyUIImageAdapter
+from audio_story.domain.stage1 import Stage1Request
+from audio_story.domain.state import StageStatus, TransactionStatus, WorkflowStatus
 from audio_story.studio.commands import StudioCommandError, StudioCommandRunner, StudioJob
 from audio_story.workflows import WorkflowKernel
 from audio_story.workflows.kernel import utc_now
@@ -280,6 +282,76 @@ def test_failed_stage2_job_can_be_requeued_with_same_job_id(tmp_path: Path) -> N
         assert retried["id"] == submitted["id"]
         assert retried["status"] == "QUEUED"
     finally:
+        runner.close()
+
+
+def test_retryable_stage1_asset_requeues_its_existing_workflow(tmp_path: Path) -> None:
+    class CapturingQueue:
+        def __init__(self) -> None:
+            self.items: list[object] = []
+
+        def put(self, item: object) -> None:
+            self.items.append(item)
+
+    workspace = tmp_path / "workspace"
+    runner = StudioCommandRunner(workspace, CANONICAL)
+    original_queue = runner._queue
+    captured = CapturingQueue()
+    runner._queue = captured  # type: ignore[assignment]
+    kernel = WorkflowKernel(workspace)
+    try:
+        request = Stage1Request("YOUTH_SAFE", duration_minutes=12, duration_confirmed=True)
+        workflow_id = kernel.create_workflow("YOUTH_SAFE", "STAGE1", "CREATE", "a" * 64, "b" * 64)
+        kernel.transition_workflow(workflow_id, WorkflowStatus.RUNNING)
+        stage_id = kernel.start_stage(workflow_id, "STAGE1", "c" * 64)
+        kernel.transition_stage(stage_id, StageStatus.GENERATING)
+        transaction_id = kernel.get_or_create_transaction(
+            stage_id, "TEXT", "segment-opening-001-01.json"
+        )
+        kernel.transition_stage(stage_id, StageStatus.FAIL)
+        kernel.transition_workflow(workflow_id, WorkflowStatus.FAILED)
+        with kernel.db.transaction() as connection:
+            connection.execute(
+                "UPDATE asset_transactions SET status=? WHERE id=?",
+                (TransactionStatus.FAILED_RETRYABLE, transaction_id),
+            )
+        job = StudioJob(
+            "retry-job",
+            "STAGE1_CREATE",
+            "FAILED",
+            "YOUTH_SAFE",
+            "vi",
+            12,
+            0,
+            "Title",
+            workflow_id=workflow_id,
+            stage_id=stage_id,
+        )
+        with runner._lock:
+            runner._jobs[job.id] = job
+            runner._stage1_requests[job.id] = request
+
+        retried = runner.retry_stage1_asset(transaction_id)
+
+        assert retried["id"] == job.id
+        assert retried["status"] == "QUEUED"
+        assert (
+            kernel.db.connection.execute(
+                "SELECT status FROM workflow_runs WHERE id=?", (workflow_id,)
+            ).fetchone()[0]
+            == WorkflowStatus.RUNNING
+        )
+        assert (
+            kernel.db.connection.execute(
+                "SELECT status FROM stage_runs WHERE id=?", (stage_id,)
+            ).fetchone()[0]
+            == StageStatus.GENERATING
+        )
+        assert len(captured.items) == 1
+        assert captured.items[0].resume is True  # type: ignore[union-attr]
+    finally:
+        kernel.close()
+        runner._queue = original_queue
         runner.close()
 
 

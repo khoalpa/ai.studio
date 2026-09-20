@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "GREETING",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "greeting_005_04",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "trong ngôi nhà nhỏ, ánh sáng ấm áp",
+      "text": "Trong ngôi nhà nhỏ này, mỗi cảm xúc đều được biểu hiện qua đồ vật và màu sắc."
+    }
+  ]
+}

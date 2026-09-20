@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "GREETING",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "greeting_004_04",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "安静的房间，充满温馨的色彩，孩子们走进来，好奇和兴奋。",
+      "text": "Trẻ em bước vào ngôi nhà, cảm giác tò mò và phấn khích."
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "DEVELOPMENT",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "development_002_03",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "Trong ngôi nhà nhỏ, ánh sáng yếu từ bên ngoài chiếu qua cửa sổ.",
+      "text": "Cảm xúc nhỏ nhìn thấy chiếc ghế trống và quyết định thử ngồi lên đó."
+    }
+  ]
+}

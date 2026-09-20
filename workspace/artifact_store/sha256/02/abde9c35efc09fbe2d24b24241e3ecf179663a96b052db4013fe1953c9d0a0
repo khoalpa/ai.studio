@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "OPENING",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "opening_003_01",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "Trong ngôi nhà nhỏ này, ánh sáng yếu ớt chiếu qua cửa sổ, tạo nên một không gian ấm áp.",
+      "text": "Cảm xúc nhỏ mở cửa sổ, nhìn ra ngoài, thấy những ánh sáng mờ ảo của buổi sáng."
+    }
+  ]
+}

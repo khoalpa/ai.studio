@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "GREETING",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "greeting_005_03",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "Ngôi nhà yên bình",
+      "text": "Trẻ em bước vào phòng hạnh phúc, tò mò tìm kiếm những đồ vật nhỏ."
+    }
+  ]
+}

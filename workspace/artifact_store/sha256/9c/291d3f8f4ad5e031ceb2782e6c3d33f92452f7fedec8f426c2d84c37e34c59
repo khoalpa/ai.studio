@@ -1,0 +1,50 @@
+{
+  "schema_version": "1.0",
+  "phase": "review",
+  "status": "PASS",
+  "payload": {
+    "verdict": "PASS",
+    "findings": [
+      {
+        "field": "premise",
+        "value": "Ngôi nhà của những cảm xúc nhỏ."
+      },
+      {
+        "field": "beats[0].description",
+        "value": "Trong ngôi nhà nhỏ này, mỗi cảm xúc đều được biểu hiện qua đồ vật và màu sắc."
+      },
+      {
+        "field": "beats[0].character",
+        "value": "Cảm xúc nhỏ"
+      },
+      {
+        "field": "beats[0].actions",
+        "value": "Các cảm xúc nhỏ sống trong ngôi nhà và biểu hiện thông qua các đồ vật và màu sắc."
+      },
+      {
+        "field": "beats[1].description",
+        "value": "Mỗi cảm xúc có một màu sắc đặc biệt và một đồ vật biểu trưng cho nó."
+      },
+      {
+        "field": "beats[1].character",
+        "value": "Cảm xúc nhỏ"
+      },
+      {
+        "field": "beats[1].actions",
+        "value": "Các cảm xúc nhỏ đều có màu sắc riêng và đồ vật biểu trưng cho cảm xúc của mình."
+      },
+      {
+        "field": "beats[2].description",
+        "value": "Ngày một, cảm xúc nhỏ dần dần học cách chia sẻ và giao tiếp với nhau."
+      },
+      {
+        "field": "beats[2].character",
+        "value": "Cảm xúc nhỏ"
+      },
+      {
+        "field": "beats[2].actions",
+        "value": "Các cảm xúc nhỏ học cách chia sẻ và giao tiếp với nhau, mở ra nhiều cơ hội giao lưu và kết bạn."
+      }
+    ]
+  }
+}

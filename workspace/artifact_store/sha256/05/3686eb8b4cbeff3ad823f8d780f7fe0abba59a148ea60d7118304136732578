@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "OPENING",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "opening_003_03",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "trong không gian yên bình của ngôi nhà cảm xúc",
+      "text": "Trẻ em tìm thấy một quyển sách nhỏ trong góc phòng hạnh phúc. Quyển sách nhỏ này chứa những câu chuyện về hạnh phúc và cách chia sẻ cảm xúc."
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "GREETING",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "greeting_004_03",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "Trong ngôi nhà nhỏ này, mỗi cảm xúc đều được biểu hiện qua đồ vật và màu sắc.",
+      "text": "Cảm xúc nhỏ nhận ra một chiếc đồng hồ cổ ở góc phòng."
+    }
+  ]
+}

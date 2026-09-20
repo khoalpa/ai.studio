@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "OPENING",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "opening_004_02",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "Trong ngôi nhà nhỏ, ánh sáng mờ mịt từ chiếc đèn treo.",
+      "text": "Cảm xúc nhỏ bắt đầu khám phá chiếc bàn cũ kỹ, tìm kiếm dấu vết của những kỷ niệm."
+    }
+  ]
+}

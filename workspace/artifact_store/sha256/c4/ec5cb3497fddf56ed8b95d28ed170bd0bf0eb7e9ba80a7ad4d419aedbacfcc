@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "INTRODUCTION",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "introduction_004_02",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "Trong không gian yên tĩnh của ngôi nhà nhỏ",
+      "text": "Cảm xúc nhỏ nhẹ nhàng nắm lấy một chiếc khóa cổ."
+    }
+  ]
+}

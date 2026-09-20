@@ -90,6 +90,7 @@ class StudioJob:
 class _QueuedStage1:
     job_id: str
     request: Stage1Request
+    resume: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -143,6 +144,7 @@ class StudioCommandRunner:
         self._workspace = workspace.resolve()
         self._canonical_path = canonical_path.resolve()
         self._jobs: dict[str, StudioJob] = {}
+        self._stage1_requests: dict[str, Stage1Request] = {}
         self._cancellations: dict[str, threading.Event] = {}
         self._semantic_assessments: dict[str, dict[str, SemanticAssessment]] = {}
         self._lock = threading.Lock()
@@ -228,6 +230,7 @@ class StudioCommandRunner:
         )
         with self._lock:
             self._jobs[job.id] = job
+            self._stage1_requests[job.id] = request
             self._cancellations[job.id] = threading.Event()
         self._queue.put(_QueuedStage1(job.id, request))
         return asdict(job)
@@ -667,6 +670,59 @@ class StudioCommandRunner:
         self._queue.put(queued)
         return asdict(job)
 
+    def retry_stage1_asset(self, transaction_id: str) -> dict[str, Any]:
+        """Resume the owning Stage 1 run for one retryable text transaction."""
+        self._require_worker()
+        kernel = WorkflowKernel(self._workspace)
+        try:
+            row = kernel.db.connection.execute(
+                "SELECT w.id workflow_id,w.status workflow_status,s.id stage_id,s.stage,s.status "
+                "stage_status,t.status transaction_status FROM asset_transactions t "
+                "JOIN stage_runs s ON s.id=t.stage_run_id "
+                "JOIN workflow_runs w ON w.id=s.workflow_id WHERE t.id=?",
+                (transaction_id,),
+            ).fetchone()
+            if row is None:
+                raise StudioCommandError(
+                    "UI118_TRANSACTION_NOT_FOUND", "transaction does not exist"
+                )
+            if (
+                row["stage"] != "STAGE1"
+                or row["transaction_status"] != "FAILED_RETRYABLE"
+                or row["stage_status"] != StageStatus.FAIL
+                or row["workflow_status"] != WorkflowStatus.FAILED
+            ):
+                raise StudioCommandError(
+                    "UI119_TRANSACTION_NOT_RETRYABLE",
+                    "only a failed retryable Stage 1 transaction can be regenerated",
+                )
+            with self._lock:
+                job = next(
+                    (
+                        candidate
+                        for candidate in self._jobs.values()
+                        if candidate.workflow_id == row["workflow_id"]
+                        and candidate.stage_id == row["stage_id"]
+                    ),
+                    None,
+                )
+                request = self._stage1_requests.get(job.id) if job is not None else None
+                if job is None or request is None:
+                    raise StudioCommandError(
+                        "UI120_RETRY_CONTEXT_UNAVAILABLE",
+                        "the original Stage 1 request is not available in this Studio session",
+                    )
+                job.status = "QUEUED"
+                job.error_code = None
+                job.error_message = None
+                self._cancellations[job.id] = threading.Event()
+            kernel.transition_workflow(str(row["workflow_id"]), WorkflowStatus.RUNNING)
+            kernel.transition_stage(str(row["stage_id"]), StageStatus.GENERATING)
+            self._queue.put(_QueuedStage1(job.id, request, resume=True))
+            return asdict(job)
+        finally:
+            kernel.close()
+
     def _worker(self) -> None:
         try:
             self._worker_loop()
@@ -690,7 +746,7 @@ class StudioCommandRunner:
                 job.status = "RUNNING"
             try:
                 if isinstance(queued, _QueuedStage1):
-                    self._run_stage1(job, queued.request)
+                    self._run_stage1(job, queued.request, resume=queued.resume)
                 elif isinstance(queued, _QueuedVlmReview):
                     self._run_vlm_review(job)
                 elif isinstance(queued, _QueuedStage3):
@@ -719,17 +775,22 @@ class StudioCommandRunner:
                     job.error_message = type(exc).__name__
                 self._update_persisted_status(job)
 
-    def _run_stage1(self, job: StudioJob, request: Stage1Request) -> None:
+    def _run_stage1(self, job: StudioJob, request: Stage1Request, *, resume: bool = False) -> None:
         kernel = WorkflowKernel(self._workspace)
         try:
             try:
-                result = Stage1Service(
+                service = Stage1Service(
                     kernel,
                     self._stage1_adapter,
                     self._canonical_path,
                     character_image_config=self._stage1_character_image_config,
                     story_quality_assessor=self._stage1_story_quality_assessor,
-                ).start(request)
+                )
+                if resume:
+                    assert job.workflow_id is not None and job.stage_id is not None
+                    result = service.resume_recovery(job.workflow_id, job.stage_id, request)
+                else:
+                    result = service.start(request)
             except Stage1Error:
                 failed = kernel.db.connection.execute(
                     "SELECT w.id workflow_id,s.id stage_id FROM workflow_runs w "

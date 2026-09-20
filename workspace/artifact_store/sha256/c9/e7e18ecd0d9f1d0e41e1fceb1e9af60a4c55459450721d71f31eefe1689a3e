@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "OPENING",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "opening_002_01",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "Trong phòng hạnh phúc, ánh sáng rực rỡ và âm nhạc nhẹ nhàng",
+      "text": "Trẻ em nở nụ cười, hạnh phúc khi bắt gặp một chiếc bàn nhỏ đầy đồ chơi đáng yêu"
+    }
+  ]
+}

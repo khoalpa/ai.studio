@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "INTRODUCTION",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "introduction_002_03",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "Trong ngôi nhà nhỏ này, ánh sáng yếu ấm từ cửa sổ chiếu vào.",
+      "text": "Cảm xúc nhỏ bắt đầu khám phá các đồ vật lạ trong ngôi nhà."
+    }
+  ]
+}

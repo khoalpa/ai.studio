@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "GREETING",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "greeting_005_04",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "trong ngôi nhà nhỏ, ánh sáng ấm áp",
+      "text": "Cảm xúc nhỏ bước vào phòng khách, nhìn thấy đồ vật màu xanh lá cây và hoa hồng."
+    }
+  ]
+}

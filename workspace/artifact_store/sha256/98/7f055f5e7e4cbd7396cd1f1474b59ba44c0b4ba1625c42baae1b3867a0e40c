@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "OPENING",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "opening_004_01",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "Trong ngôi nhà nhỏ này,",
+      "text": "cánh cửa ngăn kéo kín mở ra, hé lộ một câu hỏi: 'Cảm xúc nào đang chờ ở bên trong?'"
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "DEVELOPMENT",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "development_005_03",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "Trong ngôi nhà nhỏ, giữa các đồ vật biểu trưng cho cảm xúc",
+      "text": "Cảm xúc nhỏ tìm thấy một chiếc hộp gỗ nhỏ, bên trong có một lá thư ngắn."
+    }
+  ]
+}

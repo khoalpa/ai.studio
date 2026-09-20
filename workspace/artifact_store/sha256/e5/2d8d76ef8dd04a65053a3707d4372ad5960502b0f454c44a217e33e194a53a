@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "INTRODUCTION",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "introduction_003_04",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "trong không gian ngôi nhà nhỏ, ánh sáng mờ ảo",
+      "text": "Cảm xúc nhỏ tìm thấy một chiếc gương cũ, phản chiếu hình ảnh của họ trong ngôi nhà."
+    }
+  ]
+}

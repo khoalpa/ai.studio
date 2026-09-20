@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "GREETING",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "greeting_005_03",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "Trong căn phòng nhỏ, ánh sáng dịu nhẹ từ cửa sổ rọi vào.",
+      "text": "Cảm xúc nhỏ tìm thấy một chiếc hộp gỗ nhỏ bên trong ngăn kéo."
+    }
+  ]
+}

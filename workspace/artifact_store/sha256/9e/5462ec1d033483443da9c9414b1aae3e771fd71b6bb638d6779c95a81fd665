@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "INTRODUCTION",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "introduction_001_04",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "Trong phòng hạnh phúc của ngôi nhà nhỏ",
+      "text": "Trẻ em tìm thấy một quyển sách nhỏ trong góc phòng hạnh phúc."
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "CLIMAX",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "climax_002_01",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "Trong ngôi nhà nhỏ, giữa các vật dụng màu sắc đặc biệt",
+      "text": "Cảm xúc nhỏ chọn một đồ vật màu xanh, biểu hiện lòng tin"
+    }
+  ]
+}

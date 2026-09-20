@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "CLIMAX",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "climax_004_01",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "Trong ngôi nhà nhỏ, giữa các đồ vật và màu sắc biểu trưng cho cảm xúc nhỏ.",
+      "text": "Cảm xúc nhỏ đã học cách chia sẻ và giao tiếp, mở ra nhiều cơ hội giao lưu và kết bạn."
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "zone": "CLIMAX",
+  "status": "PASS",
+  "items": [
+    {
+      "item_id": "climax_003_01",
+      "speaker_id": "narrator",
+      "voice": "narrator",
+      "speed": "1.0",
+      "environment": "Trong ngôi nhà nhỏ này, ánh sáng mờ mờ từ bên ngoài chiếu vào.",
+      "text": "Cảm xúc nhỏ đã học cách chia sẻ và giao tiếp, nhưng vẫn còn nhiều khó khăn."
+    }
+  ]
+}
