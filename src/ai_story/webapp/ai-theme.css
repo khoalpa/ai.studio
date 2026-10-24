@@ -143,7 +143,7 @@
 }
 
 /* Generated from tokens.json — AI Themes 1.0.0 */
-:root[data-theme="atelier"][data-resolved-mode="light"], :root[data-theme="atelier"][data-mode="light"] {
+:root[data-theme="studio"][data-resolved-mode="light"], :root[data-theme="studio"][data-mode="light"] {
   color-scheme: light;
   --ui-bg: #f6f5f2;
   --ui-canvas: #eeece7;
@@ -171,7 +171,7 @@
   --ui-overlay: #00000088;
   --ui-shadow-color: #17203322;
 }
-:root[data-theme="atelier"][data-resolved-mode="dark"], :root[data-theme="atelier"][data-mode="dark"] {
+:root[data-theme="studio"][data-resolved-mode="dark"], :root[data-theme="studio"][data-mode="dark"] {
   color-scheme: dark;
   --ui-bg: #080b10;
   --ui-canvas: #070a0f;

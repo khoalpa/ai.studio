@@ -2,7 +2,7 @@
 (() => {
   'use strict';
   const root = document.documentElement;
-  const choices = {theme: ['neutral', 'atelier', 'paper'], mode: ['system', 'light', 'dark'], style: ['minimal', 'soft', 'editorial'], density: ['comfortable', 'compact']};
+  const choices = {theme: ['neutral', 'studio', 'paper'], mode: ['system', 'light', 'dark'], style: ['minimal', 'soft', 'editorial'], density: ['comfortable', 'compact']};
   const defaults = {theme: root.dataset.theme || 'neutral', mode: root.dataset.mode || 'system', style: root.dataset.style || 'minimal', density: root.dataset.density || 'comfortable'};
   const key = 'ai-themes:1:' + (root.dataset.themeApp || location.pathname);
   const media = matchMedia('(prefers-color-scheme: dark)');
@@ -24,7 +24,7 @@
     trigger.className = 'ui-theme-trigger'; trigger.type = 'button'; trigger.textContent = '◐'; trigger.title = 'Giao diện'; trigger.setAttribute('aria-label', 'Tùy chỉnh giao diện'); trigger.setAttribute('aria-haspopup', 'dialog');
     const dialog = document.createElement('dialog'); dialog.id = 'ui-theme-dialog'; dialog.className = 'ui-theme-dialog'; dialog.setAttribute('aria-labelledby', 'ui-theme-title');
     const heading = document.createElement('h2'); heading.id = 'ui-theme-title'; heading.textContent = 'Giao diện'; dialog.append(heading);
-    const labels = {theme: ['Bảng màu', ['Trung tính', 'Atelier', 'Giấy']], mode: ['Chế độ', ['Theo hệ thống', 'Sáng', 'Tối']], style: ['Phong cách', ['Tối giản', 'Mềm mại', 'Biên tập']], density: ['Khoảng cách', ['Thoải mái', 'Gọn']]};
+    const labels = {theme: ['Bảng màu', ['Trung tính', 'Studio', 'Giấy']], mode: ['Chế độ', ['Theo hệ thống', 'Sáng', 'Tối']], style: ['Phong cách', ['Tối giản', 'Mềm mại', 'Biên tập']], density: ['Khoảng cách', ['Thoải mái', 'Gọn']]};
     for (const k in choices) {
       const label = document.createElement('label'); label.textContent = labels[k][0];
       const select = document.createElement('select'); select.dataset.preference = k;

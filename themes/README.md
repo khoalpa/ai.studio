@@ -6,7 +6,7 @@ Bộ giao diện dùng chung cho các dự án trong `D:/project`. Nguồn chu�
 
 ## Cấu hình
 
-`project.json` chọn `theme` (neutral, atelier, paper), `mode` (system, light,
+`project.json` chọn `theme` (neutral, studio, paper), `mode` (system, light,
 dark), `style` (minimal, soft, editorial), `density` (comfortable, compact).
 Token màu nguồn nằm trong `tokens.json`; component chỉ dùng biến `--ui-*`.
 Giữ màu nội dung ảnh, video, phụ đề và màu nhận diện nghiệp vụ ngoài theme.
