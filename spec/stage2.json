@@ -1,0 +1,33 @@
+{
+  "schema_version": "1.0",
+  "visual_plan_schema_version": "1.2",
+  "visual_bible_schema_version": "2.2",
+  "enabled_mode": "ZONE",
+  "landscape": {"width": 3840, "height": 2160, "format": "PNG"},
+  "max_attempts_per_basename": 3,
+  "cover_max_attempts": 4,
+  "asset_roles": {
+    "cover.png": "COVER",
+    "greeting.png": "GREETING",
+    "opening.png": "ZONE",
+    "introduction.png": "ZONE",
+    "development.png": "ZONE",
+    "climax.png": "ZONE",
+    "falling.png": "ZONE",
+    "ending.png": "ZONE",
+    "farewell.png": "FAREWELL",
+    "outro.png": "OUTRO"
+  },
+  "zone_by_basename": {
+    "cover.png": null,
+    "greeting.png": "GREETING",
+    "opening.png": "OPENING",
+    "introduction.png": "INTRODUCTION",
+    "development.png": "DEVELOPMENT",
+    "climax.png": "CLIMAX",
+    "falling.png": "FALLING",
+    "ending.png": "ENDING",
+    "farewell.png": "FAREWELL",
+    "outro.png": null
+  }
+}

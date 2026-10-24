@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="vi" data-theme="neutral" data-mode="system" data-style="minimal" data-density="comfortable" data-theme-app="preview">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AI Themes — Xem trước</title>
+  <script src="../dist/theme.js"></script>
+  <link rel="stylesheet" href="../dist/theme.css">
+  <style>
+    body { margin:0; padding:32px; }
+    main { max-width:1060px; margin:auto; }
+    h1 { font-size:36px; margin-bottom:8px; }
+    h2 { font-size:18px; }
+    p { color:var(--ui-muted); }
+    .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,290px),1fr)); gap:var(--ui-gap); margin-block:24px; }
+    .stack { display:grid; gap:var(--ui-gap); }
+    label { display:grid; gap:6px; }
+    [data-style="editorial"] h1, [data-style="editorial"] h2 { font-family:var(--ui-font-display); }
+    .ui-tabs { margin-bottom:16px; }
+    @media(max-width:600px) { body { padding:16px; } }
+  </style>
+</head>
+<body class="ui-scope">
+<main>
+  <p>AI THEMES / 1.0.0</p>
+  <h1>Một nền tảng, nhiều sắc thái.</h1>
+  <p>Dùng nút ◐ để chọn bảng màu, chế độ sáng/tối, phong cách và khoảng cách.</p>
+  <div class="grid">
+    <section class="ui-card stack">
+      <h2>Thao tác</h2>
+      <div class="ui-actions"><button class="ui-button ui-primary">Tạo dự án</button><button class="ui-button">Xem trước</button></div>
+      <div class="ui-actions"><button class="ui-button" disabled>Chưa khả dụng</button><button class="ui-button" disabled aria-busy="true">Đang lưu…</button></div>
+      <p>Nhấn Tab để kiểm tra viền focus; rê chuột lên nút để xem hover.</p>
+    </section>
+    <section class="ui-card stack">
+      <h2>Thông tin dự án</h2>
+      <label>Tên dự án<input class="ui-input" value="Xưởng sáng tạo — Tiếng Việt"></label>
+      <label>Loại dự án<select class="ui-select"><option>Hình ảnh</option><option>Âm thanh</option><option>Video</option></select></label>
+      <label>Ghi chú<textarea class="ui-textarea" placeholder="Mô tả ý tưởng của bạn"></textarea></label>
+    </section>
+    <section class="ui-card stack">
+      <h2>Phản hồi</h2>
+      <div class="ui-feedback" role="status">Thông tin: tệp được lưu trên máy.</div>
+      <div class="ui-feedback" data-status="success">Thành công: đã lưu dự án.</div>
+      <div class="ui-feedback" data-status="warning">Chú ý: còn thay đổi chưa lưu.</div>
+      <div class="ui-feedback" data-status="danger">Lỗi: tên dự án không được để trống.</div>
+    </section>
+  </div>
+  <section class="ui-card">
+    <h2>Hoạt động gần đây</h2>
+    <table class="ui-table"><thead><tr><th>Dự án</th><th>Trạng thái</th><th>Loại</th></tr></thead><tbody><tr><td>Bộ sưu tập mùa thu</td><td>Hoàn tất</td><td>Hình ảnh</td></tr><tr><td>Câu chuyện mới</td><td>Bản nháp</td><td>Âm thanh</td></tr></tbody></table>
+  </section>
+</main>
+</body>
+</html>

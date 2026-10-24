@@ -1,0 +1,25 @@
+{
+  "schema_version": "1.0",
+  "suite_id": "real-package-baseline-v1",
+  "description": "Frozen package-quality baseline assembled from canonical story, visual and independent human evidence.",
+  "story_suite_id": "canonical-story-quality-v4",
+  "image_suite_id": "canonical-image-quality-v1",
+  "quality_preset": "quality",
+  "allowed_provider_modes": ["local", "local_sd35"],
+  "minimum_story_cases": 24,
+  "maximum_story_cases": 30,
+  "minimum_visual_cases": 8,
+  "maximum_visual_cases": 10,
+  "required_profiles": ["YOUTH_SAFE", "ADULT_STANDARD", "SERIAL_DETECTIVE"],
+  "human_review": {
+    "independent_reviewer_count": 2,
+    "minimum_blocker_kappa": 0.7,
+    "minimum_image_score": 4.0
+  },
+  "required_evidence": [
+    "story_baseline",
+    "image_baseline",
+    "story_human_review",
+    "image_human_review"
+  ]
+}

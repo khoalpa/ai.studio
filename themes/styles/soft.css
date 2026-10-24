@@ -1,0 +1,8 @@
+/* Generated from tokens.json — AI Themes 1.0.0 */
+:root[data-style="soft"] {
+  --ui-radius-sm: 8px;
+  --ui-radius-md: 12px;
+  --ui-radius-lg: 18px;
+  --ui-shadow-sm: 0 2px 8px var(--ui-shadow-color);
+  --ui-shadow-md: 0 12px 32px var(--ui-shadow-color);
+}

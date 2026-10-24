@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gates.schema.json",
+  "type": "object",
+  "required": ["registry_version", "gates"],
+  "properties": {
+    "registry_version": {"type": "string"},
+    "gates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "owner", "stages", "profiles", "detector", "severity"],
+        "additionalProperties": false
+      }
+    }
+  }
+}

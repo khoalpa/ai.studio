@@ -1,0 +1,7 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "production_plan.schema.json",
+  "type": "object",
+  "required": ["schema_version", "source_binding", "project", "shot_registry", "continuity_graph", "camera_vocabulary", "negative_prompt_policy", "voice_inventory", "subtitle_delivery", "audio_delivery", "export_presets", "validation"],
+  "additionalProperties": false
+}

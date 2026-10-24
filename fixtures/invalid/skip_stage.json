@@ -1,0 +1,5 @@
+{
+  "current_stage": "STAGE1",
+  "requested_stage": "STAGE3",
+  "expected_error": "STAGE_TRANSITION_INVALID"
+}

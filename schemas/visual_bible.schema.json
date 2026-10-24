@@ -1,0 +1,7 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "visual_bible.schema.json",
+  "type": "object",
+  "required": ["schema_version", "story_sha256", "active_profile", "age_profile", "art_direction_id", "tonal_plan", "character_identity_locks", "wardrobe_state_map", "recurring_location_locks", "prop_color_anchors", "approved_story_symbols", "landscape_reference_map", "dependency_digest"],
+  "additionalProperties": false
+}

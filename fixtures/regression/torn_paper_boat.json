@@ -1,0 +1,15 @@
+{
+  "case_id": "youth-torn-paper-boat",
+  "seed": 26092026,
+  "profile": "YOUTH_SAFE",
+  "language": "vi",
+  "minutes": 15,
+  "brief": "Chào ngắn và giới thiệu tên truyện, tác giả. Mưa tạt làm chiếc thuyền của Bo mềm và rách. Chiếc thuyền có nếp gấp và ô cửa do Bo tự làm, nên em muốn giữ. Bo từ chối thuyền thay thế, mang thuyền cũ vào phòng gối xanh và dần cho mẹ ngồi bên. Bo nói mình buồn, xin mẹ ôm và chọn giữ chiếc thuyền còn vết rách. Bo đặt thuyền trên một bến khô cạnh gối vịt. Thuyền không lành lại; Bo và mẹ giữ trang sách làm dòng sông, cùng ở bên nỗi buồn còn lại. Chào tạm biệt ngắn, không nhắc lại bài học.",
+  "required_elements": ["Bo", "mẹ", "thuyền", "vết rách", "gối xanh", "trang sách", "dòng sông"],
+  "forbidden_outcomes": ["thuyền lành lại", "An và Minh", "Hình ảnh 2", "Dấu vết 3"],
+  "negative_fixture_expectations": {
+    "editorial_status": "NOT_ASSESSED_FIXTURE",
+    "allowed_next_stage": null,
+    "required_failed_gates": []
+  }
+}

@@ -1,0 +1,6 @@
+participant_id,study_type,role,technical_level,t1_result,t1_help_level,t1_critical_errors,t2_result,t2_help_level,t2_critical_errors,t3_result,t3_help_level,t3_critical_errors,t4_result,t4_help_level,t4_critical_errors,notes_reference
+P01,SIMULATED_CODEX,content_operator,low,ASSISTED,2,0,FAILURE,3,1,ASSISTED,2,0,SUCCESS,0,0,simulated-session-results-2026-10-10.md#p01
+P02,SIMULATED_CODEX,content_operator,medium,SUCCESS,0,0,ASSISTED,2,0,ASSISTED,1,0,SUCCESS,0,0,simulated-session-results-2026-10-10.md#p02
+P03,SIMULATED_CODEX,content_operator,medium,SUCCESS,0,0,FAILURE,3,1,SUCCESS,0,0,SUCCESS,0,0,simulated-session-results-2026-10-10.md#p03
+P04,SIMULATED_CODEX,editorial_qa,medium,SUCCESS,0,0,ASSISTED,1,0,SUCCESS,0,0,SUCCESS,0,0,simulated-session-results-2026-10-10.md#p04
+P05,SIMULATED_CODEX,technical_accessibility_qa,high,ASSISTED,2,1,ASSISTED,1,0,SUCCESS,0,0,SUCCESS,0,0,simulated-session-results-2026-10-10.md#p05

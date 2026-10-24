@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "registry.schema.json",
+  "type": "object",
+  "required": ["spec_version", "source", "enums", "profiles", "workflow", "artifacts", "zone_image_basenames", "file_sets"],
+  "additionalProperties": false,
+  "properties": {
+    "spec_version": {"type": "string"},
+    "source": {"type": "object", "required": ["prompt_version", "sha256"]},
+    "enums": {"type": "object"},
+    "profiles": {"type": "object"},
+    "workflow": {"type": "object"},
+    "artifacts": {"type": "object"},
+    "zone_image_basenames": {"type": "array", "minItems": 10, "maxItems": 10, "uniqueItems": true},
+    "file_sets": {"type": "object"}
+  }
+}

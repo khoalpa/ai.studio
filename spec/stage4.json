@@ -1,0 +1,29 @@
+{
+  "schema_version": "1.0",
+  "video_prompt_schema_version": "1.2",
+  "generator_target": {"family": "VEO", "preferred_model": "VEO_3_1", "prompt_language": "EN"},
+  "defaults": {"aspect_ratio": "LANDSCAPE_16_9", "coverage_mode": "FULL_STORY", "clip_duration_seconds": 8, "audio_mode": "NATIVE_DIALOGUE", "continuity_mode": "CHAINED_LAST_FRAME"},
+  "clip_duration_options": [4, 6, 8],
+  "sentence_usable_span_max_seconds": 7.95,
+  "timeline_decimal_places": 3,
+  "pause_seconds": {"PERIOD": 0.35, "QUESTION": 0.45, "EXCLAMATION": 0.40, "ELLIPSIS": 0.60, "OTHER": 0.20},
+  "speed_multiplier": {"SLOW": 0.85, "NORMAL": 1.0, "FAST": 1.15},
+  "target_wpm": {"YOUTH_SAFE": 130, "ADULT_STANDARD": 220, "SERIAL_DETECTIVE": 220},
+  "max_character_references_per_clip": 3,
+  "large_plan_confirmation_threshold": 120,
+  "prompt_language": "EN",
+  "native_voice_language": "vi-VN",
+  "preferred_locale": "vi-VN",
+  "preferred_accent": "SOUTHERN_VIETNAMESE",
+  "production_plan_schema_version": "1.0",
+  "subtitle_formats": ["SRT", "WEBVTT"],
+  "camera_vocabulary": {
+    "shot_sizes": ["WIDE", "MEDIUM_WIDE", "MEDIUM", "MEDIUM_CLOSE", "CLOSE_UP"],
+    "angles": ["EYE_LEVEL", "LOW_ANGLE", "HIGH_ANGLE", "OVER_SHOULDER"],
+    "movements": ["STATIC", "SLOW_PUSH", "SLOW_PULL", "PAN_LEFT", "PAN_RIGHT", "TRACK_LEFT", "TRACK_RIGHT"]
+  },
+  "export_presets": {
+    "LANDSCAPE_16_9": {"width": 3840, "height": 2160, "fps": 24, "video_codec": "h264", "pixel_format": "yuv420p", "audio_codec": "aac", "audio_sample_rate": 48000},
+    "PORTRAIT_9_16": {"width": 1080, "height": 1920, "fps": 30, "video_codec": "h264", "pixel_format": "yuv420p", "audio_codec": "aac", "audio_sample_rate": 48000}
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "visual_plan.schema.json",
+  "type": "object",
+  "required": ["schema_version", "story_sha256", "story_validation_sha256", "requested_mode", "resolved_mode", "scene_source_digest_sha256", "selected_scene_count", "assets", "selection_coverage", "visual_plan_digest_sha256"],
+  "additionalProperties": false
+}

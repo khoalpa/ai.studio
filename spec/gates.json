@@ -1,0 +1,30 @@
+{
+  "registry_version": "0.1.0",
+  "gates": [
+    {"id": "PROFILE_GATE", "owner": "ROUTING", "stages": ["STAGE1", "STAGE2", "STAGE3", "STAGE4"], "profiles": ["ALL"], "detector": "DETERMINISTIC", "severity": "PUBLISH_BLOCKER"},
+    {"id": "STORY_DURATION_CONFIRMATION", "owner": "ROUTING", "stages": ["STAGE1"], "profiles": ["ALL"], "detector": "DETERMINISTIC", "severity": "PUBLISH_BLOCKER"},
+    {"id": "STORY_JSON_GATE", "owner": "STORY", "stages": ["STAGE1", "STAGE2", "STAGE3", "STAGE4"], "profiles": ["ALL"], "detector": "DETERMINISTIC", "severity": "PUBLISH_BLOCKER"},
+    {"id": "STORY_QUALITY_GATE", "owner": "STORY", "stages": ["STAGE1"], "profiles": ["ALL"], "detector": "DETERMINISTIC", "severity": "QUALITY_BLOCKER"},
+    {"id": "STORY_CONTRACT_GATE", "owner": "STORY", "stages": ["STAGE1"], "profiles": ["ALL"], "detector": "DETERMINISTIC", "severity": "QUALITY_BLOCKER"},
+    {"id": "SEMANTIC_REPETITION_GATE", "owner": "STORY", "stages": ["STAGE1"], "profiles": ["ALL"], "detector": "DETERMINISTIC", "severity": "QUALITY_BLOCKER"},
+    {"id": "AGE_PROFILE_GATE", "owner": "STORY", "stages": ["STAGE1"], "profiles": ["ALL"], "detector": "DETERMINISTIC", "severity": "QUALITY_BLOCKER"},
+    {"id": "DIALOGUE_STRUCTURE_GATE", "owner": "STORY", "stages": ["STAGE1"], "profiles": ["ALL"], "detector": "DETERMINISTIC", "severity": "QUALITY_BLOCKER"},
+    {"id": "NARRATIVE_VOICE_GATE", "owner": "STORY", "stages": ["STAGE1"], "profiles": ["ALL"], "detector": "DETERMINISTIC", "severity": "QUALITY_BLOCKER"},
+    {"id": "SCENE_STATE_CONTINUITY_GATE", "owner": "STORY", "stages": ["STAGE1"], "profiles": ["ALL"], "detector": "DETERMINISTIC", "severity": "QUALITY_BLOCKER"},
+    {"id": "YOUTH_CONTEXT_SAFETY_GATE", "owner": "SAFETY", "stages": ["STAGE1"], "profiles": ["YOUTH_SAFE"], "detector": "DETERMINISTIC", "severity": "PUBLISH_BLOCKER"},
+    {"id": "PROFILE_SAFETY_GATE", "owner": "SAFETY", "stages": ["STAGE1", "STAGE2", "STAGE3", "STAGE4"], "profiles": ["ALL"], "detector": "TOOL_MEASURED", "severity": "PUBLISH_BLOCKER"},
+    {"id": "CHARACTER_REFERENCE_SET_GATE", "owner": "STORY", "stages": ["STAGE1", "STAGE2", "STAGE3", "STAGE4"], "profiles": ["ALL"], "detector": "DETERMINISTIC", "severity": "PUBLISH_BLOCKER"},
+    {"id": "SERIES_CONTINUITY_GATE", "owner": "SERIAL", "stages": ["STAGE1", "STAGE2"], "profiles": ["SERIAL_DETECTIVE"], "detector": "DETERMINISTIC", "severity": "PUBLISH_BLOCKER"},
+    {"id": "WORKFLOW_MANIFEST_GATE", "owner": "PACKAGING", "stages": ["STAGE1", "STAGE2", "STAGE3", "STAGE4"], "profiles": ["ALL"], "detector": "DETERMINISTIC", "severity": "PUBLISH_BLOCKER"},
+    {"id": "PACKAGE_ARCHIVE_GATE", "owner": "PACKAGING", "stages": ["STAGE1", "STAGE2", "STAGE3", "STAGE4"], "profiles": ["ALL"], "detector": "DETERMINISTIC", "severity": "PUBLISH_BLOCKER"},
+    {"id": "IMAGE_GENERATION_MODE_GATE", "owner": "VISUAL_PLANNING", "stages": ["STAGE2"], "profiles": ["ALL"], "detector": "DETERMINISTIC", "severity": "PUBLISH_BLOCKER"},
+    {"id": "VISUAL_PLAN_BINDING_GATE", "owner": "VISUAL_PLANNING", "stages": ["STAGE2", "STAGE3", "STAGE4"], "profiles": ["ALL"], "detector": "DETERMINISTIC", "severity": "PUBLISH_BLOCKER"},
+    {"id": "LANDSCAPE_ASSET_GATE", "owner": "LANDSCAPE", "stages": ["STAGE2"], "profiles": ["ALL"], "detector": "TOOL_MEASURED", "severity": "PUBLISH_BLOCKER"},
+    {"id": "LANDSCAPE_SEMANTIC_GATE", "owner": "LANDSCAPE", "stages": ["STAGE2"], "profiles": ["ALL"], "detector": "MODEL_ASSESSED", "severity": "QUALITY_BLOCKER"},
+    {"id": "PORTRAIT_ASSET_GATE", "owner": "PORTRAIT", "stages": ["STAGE3"], "profiles": ["ALL"], "detector": "TOOL_MEASURED", "severity": "PUBLISH_BLOCKER"},
+    {"id": "CROSS_ORIENTATION_PARITY_GATE", "owner": "PORTRAIT", "stages": ["STAGE3"], "profiles": ["ALL"], "detector": "MODEL_ASSESSED", "severity": "QUALITY_BLOCKER"},
+    {"id": "PACKAGE_QUALITY_REPORT_GATE", "owner": "PACKAGE", "stages": ["STAGE3", "STAGE4"], "profiles": ["ALL"], "detector": "DETERMINISTIC", "severity": "PUBLISH_BLOCKER"},
+    {"id": "VIDEO_PROMPT_FILE_GATE", "owner": "VIDEO", "stages": ["STAGE4"], "profiles": ["ALL"], "detector": "DETERMINISTIC", "severity": "PUBLISH_BLOCKER"},
+    {"id": "VIDEO_PROMPT_CONTINUITY_GATE", "owner": "VIDEO", "stages": ["STAGE4"], "profiles": ["ALL"], "detector": "MODEL_ASSESSED", "severity": "QUALITY_BLOCKER"}
+  ]
+}

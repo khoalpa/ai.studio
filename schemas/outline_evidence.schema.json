@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "outline_evidence.schema.json",
+  "type": "object",
+  "required": ["schema_version", "story_contract_digest_sha256", "requirement_bindings", "unbound_requirement_count"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "story_contract_digest_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "requirement_bindings": {"type": "array"},
+    "unbound_requirement_count": {"type": "integer", "minimum": 0}
+  }
+}

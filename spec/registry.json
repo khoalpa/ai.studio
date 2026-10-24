@@ -1,0 +1,73 @@
+{
+  "spec_version": "0.1.0",
+  "source": {
+    "prompt_version": "3.19.0",
+    "sha256": "4c021a2e61df611a566c83c22fdf4378617314147de8dd6eaa9693160205ce27"
+  },
+  "enums": {
+    "profiles": ["YOUTH_SAFE", "ADULT_STANDARD", "SERIAL_DETECTIVE"],
+    "stages": ["STAGE1", "STAGE2", "STAGE3", "STAGE4"],
+    "operation_modes": ["CREATE", "REPAIR"],
+    "execution_routes": ["CREATE", "REPAIR", "RESUME"],
+    "package_purposes": ["WORKFLOW_CHECKPOINT", "AUDIO_STORY_RELEASE", "VIDEO_PRODUCTION_RELEASE"],
+    "validation_statuses": ["PASS", "FAIL", "NOT_VERIFIED", "ASSESSED_PASS", "ASSESSED_FAIL"],
+    "detector_classes": ["DETERMINISTIC", "TOOL_MEASURED", "MODEL_ASSESSED", "HOST_UNAVAILABLE"],
+    "gate_severities": ["PUBLISH_BLOCKER", "QUALITY_BLOCKER", "ADVISORY"],
+    "image_modes": ["ZONE", "SCENE"]
+  },
+  "profiles": {
+    "YOUTH_SAFE": {"audience": "7-10", "channel": "Hộp Truyện Kỳ Diệu", "serial": false},
+    "ADULT_STANDARD": {"audience": "18+", "channel": "Dạ Khúc Trưởng Thành", "serial": false},
+    "SERIAL_DETECTIVE": {"audience": "18+", "channel": "Dạ Đàm Kỳ Án", "serial": true}
+  },
+  "workflow": {
+    "archive_name": "story.zip",
+    "manifest_name": "workflow_manifest.json",
+    "manifest_schema_version": "1.1",
+    "stage_order": ["STAGE1", "STAGE2", "STAGE3", "STAGE4"],
+    "transitions": {
+      "STAGE1": "STAGE2",
+      "STAGE2": "STAGE3",
+      "STAGE3": "STAGE4",
+      "STAGE4": null
+    },
+    "purpose_by_stage": {
+      "STAGE1": "WORKFLOW_CHECKPOINT",
+      "STAGE2": "WORKFLOW_CHECKPOINT",
+      "STAGE3": "AUDIO_STORY_RELEASE",
+      "STAGE4": "VIDEO_PRODUCTION_RELEASE"
+    }
+  },
+  "artifacts": {
+    "story.json": {"owner_stage": "STAGE1", "persist_through": "STAGE4", "cardinality": "1"},
+    "story_contract.json": {"owner_stage": "STAGE1", "persist_through": "STAGE4", "cardinality": "1"},
+    "outline_evidence.json": {"owner_stage": "STAGE1", "persist_through": "STAGE4", "cardinality": "1"},
+    "quality_decision.json": {"owner_stage": "STAGE1", "persist_through": "STAGE4", "cardinality": "1"},
+    "story_validation.json": {"owner_stage": "STAGE1", "persist_through": "STAGE4", "cardinality": "1"},
+    "validation_ledger.json": {"owner_stage": "CURRENT_STAGE", "persist_through": "CURRENT_STAGE", "cardinality": "1"},
+    "characters/*.png": {"owner_stage": "STAGE1", "persist_through": "STAGE4", "cardinality": "CHARACTER_IMAGE_COUNT"},
+    "series_anchor.json": {"owner_stage": "STAGE1", "persist_through": "STAGE4", "cardinality": "0_OR_1"},
+    "visual_plan.json": {"owner_stage": "STAGE2", "persist_through": "STAGE4", "cardinality": "1"},
+    "visual_bible.json": {"owner_stage": "STAGE2", "persist_through": "STAGE4", "cardinality": "1"},
+    "landscape/*.png": {"owner_stage": "STAGE2", "persist_through": "STAGE4", "cardinality": "ACTIVE_IMAGE_COUNT"},
+    "portrait/*.png": {"owner_stage": "STAGE3", "persist_through": "STAGE4", "cardinality": "ACTIVE_IMAGE_COUNT"},
+    "package_quality_report.json": {"owner_stage": "STAGE3", "persist_through": "STAGE4", "cardinality": "1"},
+    "visual_review.json": {"owner_stage": "STAGE4", "persist_through": "STAGE4", "cardinality": "1"},
+    "video_prompts.json": {"owner_stage": "STAGE4", "persist_through": "STAGE4", "cardinality": "1"},
+    "production_plan.json": {"owner_stage": "STAGE4", "persist_through": "STAGE4", "cardinality": "1"},
+    "subtitles.srt": {"owner_stage": "STAGE4", "persist_through": "STAGE4", "cardinality": "1"},
+    "subtitles.vtt": {"owner_stage": "STAGE4", "persist_through": "STAGE4", "cardinality": "1"},
+    "audio/*.wav": {"owner_stage": "STAGE4", "persist_through": "STAGE4", "cardinality": "0_OR_CLIP_COUNT"},
+    "workflow_manifest.json": {"owner_stage": "CURRENT_STAGE", "persist_through": "CURRENT_STAGE", "cardinality": "1"}
+  },
+  "zone_image_basenames": [
+    "cover.png", "greeting.png", "opening.png", "introduction.png", "development.png",
+    "climax.png", "falling.png", "ending.png", "farewell.png", "outro.png"
+  ],
+  "file_sets": {
+    "STAGE1": ["story.json", "story_contract.json", "outline_evidence.json", "quality_decision.json", "story_validation.json", "validation_ledger.json", "characters/*.png", "series_anchor.json?", "workflow_manifest.json"],
+    "STAGE2": ["STAGE1_INHERITED", "visual_plan.json", "visual_bible.json", "landscape/*.png", "workflow_manifest.json"],
+    "STAGE3": ["STAGE2_INHERITED", "portrait/*.png", "package_quality_report.json", "workflow_manifest.json"],
+    "STAGE4": ["STAGE3_INHERITED", "visual_review.json", "video_prompts.json", "production_plan.json", "subtitles.srt", "subtitles.vtt", "audio/*.wav?", "workflow_manifest.json"]
+  }
+}

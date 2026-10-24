@@ -1,0 +1,7 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "story_validation.schema.json",
+  "type": "object",
+  "required": ["schema_version", "prompt_version", "story_sha256", "story_content_digest_sha256", "character_reference_set_digest_sha256", "story_quality_commitment_digest_sha256", "active_profile", "summary", "scene_zone_map", "dialogue_audio", "quality", "engagement", "gates", "refinement", "evidence_graph"],
+  "additionalProperties": false
+}

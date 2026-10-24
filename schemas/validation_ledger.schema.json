@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "validation_ledger.schema.json",
+  "type": "object",
+  "required": ["schema_version", "current_stage", "records", "summary", "stage_history", "ledger_digest_sha256"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "current_stage": {"enum": ["STAGE1", "STAGE2", "STAGE3", "STAGE4"]},
+    "records": {"type": "array"},
+    "summary": {"type": "object"},
+    "stage_history": {"type": "array", "items": {"type": "string"}},
+    "ledger_digest_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}

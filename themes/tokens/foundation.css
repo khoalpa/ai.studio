@@ -1,0 +1,16 @@
+/* Generated from tokens.json — AI Themes 1.0.0 */
+:root {
+  --ui-font-sans: "Segoe UI", Inter, system-ui, -apple-system, sans-serif;
+  --ui-font-display: Georgia, "Times New Roman", serif;
+  --ui-font-mono: Consolas, "Cascadia Code", monospace;
+  --ui-font-size-body: 14px;
+  --ui-line-height: 1.5;
+  --ui-motion-fast: 160ms;
+  --ui-space-1: 4px;
+  --ui-space-2: 8px;
+  --ui-space-3: 12px;
+  --ui-space-4: 16px;
+  --ui-space-5: 24px;
+  --ui-space-6: 32px;
+  --ui-space-7: 48px;
+}

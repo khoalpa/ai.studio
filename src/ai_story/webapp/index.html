@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="vi" data-theme="neutral" data-mode="system" data-style="minimal" data-density="comfortable" data-theme-app="ai.studio">
+<head>
+  <meta charset="utf-8">
+  <script src="/ai-theme.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>AI Story</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/ai-theme.css">
+</head>
+<body>
+  <a class="skip-link" href="#app">Chuyển đến nội dung chính</a>
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="#/" aria-label="AI Story — Tổng quan">
+        <span class="brand-mark" aria-hidden="true">✦</span>
+        <span class="brand-copy"><strong>AI Story</strong><small>Creative studio</small></span>
+      </a>
+      <div class="topbar-meta"><span class="environment"><span class="status-dot"></span><span>Đang chạy cục bộ</span></span><button class="icon-button" type="button" id="refresh-button" aria-label="Làm mới dữ liệu" title="Làm mới dữ liệu">↻</button></div>
+    </header>
+    <div class="app-body">
+      <aside class="sidebar">
+        <div class="nav-label">Workspace</div>
+        <nav class="primary-nav" aria-label="Điều hướng chính">
+          <a href="#/" data-route="dashboard" aria-label="Tổng quan"><span class="nav-icon" aria-hidden="true">⌂</span><span>Tổng quan</span></a>
+          <a href="#/stories" data-route="stories" aria-label="Truyện"><span class="nav-icon" aria-hidden="true">▤</span><span>Truyện</span></a>
+          <a href="#/jobs" data-route="jobs" aria-label="Tác vụ"><span class="nav-icon" aria-hidden="true">◷</span><span>Tác vụ</span></a>
+          <a href="#/validation" data-route="validation" aria-label="Kiểm định"><span class="nav-icon" aria-hidden="true">✓</span><span>Kiểm định</span></a>
+          <span class="nav-divider" aria-hidden="true"></span>
+          <span class="nav-label nav-label-secondary">Công cụ</span>
+          <a href="#/inspector" data-route="inspector" aria-label="Kiểm tra gói"><span class="nav-icon" aria-hidden="true">◇</span><span>Kiểm tra gói</span></a>
+          <a href="#/models" data-route="models" aria-label="Model local"><span class="nav-icon" aria-hidden="true">⬡</span><span>Model local</span></a>
+          <a href="#/settings" data-route="settings" aria-label="Cài đặt"><span class="nav-icon" aria-hidden="true">⚙</span><span>Cài đặt</span></a>
+        </nav>
+        <a class="sidebar-cta" href="#/new" aria-label="Tạo truyện mới"><span aria-hidden="true">＋</span><span>Tạo truyện mới</span></a>
+        <div class="sidebar-footer"><span class="avatar">LO</span><span><strong>Local operator</strong><small>Development mode</small></span></div>
+      </aside>
+      <main id="app" class="main-content" tabindex="-1"></main>
+    </div>
+  </div>
+  <div id="toast-region" class="toast-region" aria-live="polite"></div>
+  <div id="background-job-region" class="background-job-region" aria-live="polite"></div>
+  <script src="/app.js" defer></script>
+</body>
+</html>

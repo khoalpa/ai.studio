@@ -1,0 +1,8 @@
+/* Generated from tokens.json — AI Themes 1.0.0 */
+:root[data-style="editorial"] {
+  --ui-radius-sm: 2px;
+  --ui-radius-md: 4px;
+  --ui-radius-lg: 6px;
+  --ui-shadow-sm: none;
+  --ui-shadow-md: 0 4px 18px var(--ui-shadow-color);
+}

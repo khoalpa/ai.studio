@@ -1,0 +1,9 @@
+/* Generated from tokens.json — AI Themes 1.0.0 */
+:root[data-density="compact"] {
+  --ui-control-height: 36px;
+  --ui-control-height-sm: 32px;
+  --ui-control-height-lg: 44px;
+  --ui-control-padding: 6px 12px;
+  --ui-gap: 8px;
+  --ui-panel-padding: 16px;
+}

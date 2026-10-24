@@ -1,0 +1,7 @@
+{
+  "schema_version": "1.0",
+  "channels": ["development", "production"],
+  "production_required_checks": ["PACKAGE_INTEGRITY", "FINAL_STAGE", "STORY_GATES", "IMAGE_QUALITY", "EDITORIAL_EVIDENCE", "STRUCTURED_VISUAL_QA", "LAYERED_IMAGE_QA", "UPSCALE_PROVENANCE", "IMAGE_REPAIR_AUDIT", "WEB_ASSIST_DISCLOSURE", "HUMAN_VISUAL_REVIEW", "PRODUCTION_PLAN", "PROVENANCE_AND_TELEMETRY", "BENCHMARK_PROMOTION", "IMAGE_BENCHMARK_PROMOTION", "LOCAL_PROVIDER_MODE", "PRODUCTION_IMAGE_ASSESSMENT", "EXTERNAL_FRAMEWORK_AUDIT"],
+  "bundle_members": ["checksums.sha256", "release_manifest.json", "release_report.json", "story.zip"],
+  "runtime_may_self_assert_framework_audit": false
+}

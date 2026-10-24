@@ -1,0 +1,9 @@
+{
+  "schema_version": "1.0",
+  "series_anchor_schema_version": "3.2.0",
+  "serial_profile": "SERIAL_DETECTIVE",
+  "episode_modes": ["START_SERIES", "CONTINUE_SERIES", "FINALIZE_SERIES"],
+  "default_planned_arc_episodes": 12,
+  "enabled_features": ["SERIAL_ANCHOR_TRANSACTION", "SERIAL_STAGE1_TO_STAGE4", "PACKAGE_REPAIR_SESSION", "RUN_INDEX"],
+  "deferred_features": ["SCENE_MODE", "RESUME_BUNDLE", "LEGACY_MIGRATION", "EXTERNAL_FRAMEWORK_AUDIT"]
+}

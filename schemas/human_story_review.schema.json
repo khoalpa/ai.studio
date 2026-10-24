@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "human_story_review.schema.json",
+  "type": "object",
+  "required": ["schema_version", "reviewer_id", "reviews"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "reviewer_id": {"type": "string", "minLength": 1},
+    "suite_id": {"type": "string", "minLength": 1},
+    "corpus_digest_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "reviews": {
+      "type": "array",
+      "minItems": 8,
+      "maxItems": 10,
+      "items": {
+        "type": "object",
+        "required": ["case_id", "package_digest_sha256", "blocker_decision"],
+        "additionalProperties": false,
+        "properties": {
+          "case_id": {"type": "string", "minLength": 1},
+          "package_digest_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "blocker_decision": {"enum": ["UNREVIEWED", "PASS", "BLOCK"]},
+          "editorial_score": {"type": "number", "minimum": 0, "maximum": 100},
+          "notes": {"type": "string"}
+        }
+      }
+    }
+  }
+}

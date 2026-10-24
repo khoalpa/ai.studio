@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "quality_decision.schema.json",
+  "type": "object",
+  "required": ["schema_version", "workflow_status", "technical_status", "safety_status", "editorial_status", "release_status", "advancement_status", "continuation_policy", "artifact_class", "assessment_basis", "failed_gate_ids", "warning_count", "evidence_ids", "reasons", "decision_digest_sha256"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "workflow_status": {"enum": ["SUCCEEDED", "FAILED"]},
+    "technical_status": {"enum": ["PASS", "FAIL"]},
+    "safety_status": {"enum": ["PASS", "FAIL"]},
+    "editorial_status": {"enum": ["ASSESSED_PASS", "FAIL", "NOT_ASSESSED"]},
+    "release_status": {"enum": ["PASS", "BLOCKED"]},
+    "advancement_status": {"enum": ["ALLOWED", "BLOCKED"]},
+    "continuation_policy": {"enum": ["CONTINUE", "CONTINUE_WITH_WARNINGS"]},
+    "artifact_class": {"enum": ["PRODUCTION_CANDIDATE", "TEST_FIXTURE"]},
+    "assessment_basis": {"type": "string"},
+    "failed_gate_ids": {"type": "array", "items": {"type": "string"}},
+    "warning_count": {"type": "integer", "minimum": 0},
+    "evidence_ids": {"type": "array", "items": {"type": "string"}},
+    "reasons": {"type": "array"},
+    "decision_digest_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}

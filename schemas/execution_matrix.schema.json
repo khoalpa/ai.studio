@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "execution_matrix.schema.json",
+  "type": "object",
+  "required": ["matrix_version", "defaults", "routes"],
+  "properties": {
+    "matrix_version": {"type": "string"},
+    "defaults": {"type": "object"},
+    "routes": {"type": "array", "minItems": 12}
+  }
+}

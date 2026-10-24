@@ -1,0 +1,17 @@
+{
+  "schema_version": "1.0",
+  "default_provider": "piper",
+  "providers": {
+    "piper": {
+      "executable": "piper",
+      "supports": ["WAV", "OFFLINE", "EXACT_TEXT"],
+      "default_sample_rate": 22050,
+      "voices": []
+    }
+  },
+  "fallback": {
+    "provider": null,
+    "status": "NOT_VERIFIED",
+    "policy": "DO_NOT_RENDER_WITH_AN_UNVERIFIED_VOICE"
+  }
+}

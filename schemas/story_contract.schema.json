@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "story_contract.schema.json",
+  "type": "object",
+  "required": ["schema_version", "language", "scenario", "entities", "relationships", "requirements", "invariants", "forbidden_outcomes"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "language": {"type": "string", "minLength": 2},
+    "scenario": {"type": "string", "minLength": 1},
+    "entities": {"type": "array"},
+    "relationships": {"type": "array"},
+    "requirements": {"type": "array"},
+    "invariants": {"type": "array"},
+    "forbidden_outcomes": {"type": "array"}
+  }
+}

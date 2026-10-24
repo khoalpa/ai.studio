@@ -1,0 +1,61 @@
+{
+  "version": "0.1.0",
+  "color": {
+    "light": {
+      "canvas": "#F5F6F8",
+      "surface": "#FFFFFF",
+      "surface_subtle": "#F0F1F4",
+      "text": "#171A21",
+      "text_secondary": "#68707D",
+      "border": "#DDE0E6",
+      "brand": "#5B4AE8",
+      "brand_foreground": "#FFFFFF",
+      "success": "#168A61",
+      "warning": "#B56A16",
+      "danger": "#C54747"
+    },
+    "dark": {
+      "canvas": "#101216",
+      "surface": "#181B21",
+      "surface_subtle": "#20242B",
+      "text": "#F4F5F7",
+      "text_secondary": "#A7AFBB",
+      "border": "#343A45",
+      "brand": "#8D82FF",
+      "brand_foreground": "#111218",
+      "success": "#52C99A",
+      "warning": "#F0AA55",
+      "danger": "#FF8585"
+    }
+  },
+  "font": {
+    "ui": "Inter, Segoe UI, system-ui, sans-serif",
+    "editorial": "Source Serif 4, Georgia, serif",
+    "size": {
+      "caption": 12,
+      "body": 14,
+      "section": 16,
+      "page_title": 24
+    }
+  },
+  "space": [4, 8, 12, 16, 24, 32, 48],
+  "radius": {
+    "control": 8,
+    "card": 12,
+    "dialog": 16,
+    "pill": 999
+  },
+  "control_height": {
+    "desktop": 36,
+    "touch_minimum": 44
+  },
+  "motion_ms": {
+    "fast": 120,
+    "standard": 180
+  },
+  "breakpoint": {
+    "mobile": 760,
+    "desktop": 1024
+  }
+}
+

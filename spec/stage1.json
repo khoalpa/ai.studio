@@ -1,0 +1,28 @@
+{
+  "schema_version": "1.0",
+  "story_schema_version": "2.3",
+  "story_validation_schema_version": "2.4",
+  "prompt_version": "3.19.0",
+  "local_prompt_template_version": "stage1-local/1.3",
+  "zones": ["GREETING", "OPENING", "INTRODUCTION", "DEVELOPMENT", "CLIMAX", "FALLING", "ENDING", "FAREWELL"],
+  "environments": ["none", "rain_soft", "cafe_soft", "night_city_soft", "forest_deep_ambience", "school_hallway", "garden_morning", "bedroom_warm", "office_evening", "apartment_night", "train_night", "sea_wind_soft", "hospital_corridor_soft", "old_house_ambience", "library_soft", "radio_studio_soft", "kitchen_evening", "street_after_rain", "rooftop_wind_soft", "river_soft"],
+  "voices": ["NARRATOR", "MALE", "FEMALE"],
+  "speeds": ["SLOW", "NORMAL", "FAST"],
+  "languages": ["vi", "en"],
+  "max_auto_repair_rounds": 2,
+  "repair_candidates_per_round": 2,
+  "max_scene_repair_attempts": 2,
+  "character_image": {"width": 1536, "height": 2048, "format": "PNG"},
+  "duration_defaults": {
+    "YOUTH_SAFE": {"discriminator": "KIDS_7_10", "length_min": 5, "length_max": 18, "length_target": 15, "target_wpm": 130},
+    "ADULT_STANDARD": {"discriminator": "HEALING_REALISM", "length_min": 10, "length_max": 36, "length_target": 30, "target_wpm": 220},
+    "SERIAL_DETECTIVE_START_SERIES": {"discriminator": "START_SERIES", "length_min": 15, "length_max": 50, "length_target": 42, "target_wpm": 220},
+    "SERIAL_DETECTIVE_CONTINUE_SERIES": {"discriminator": "CONTINUE_SERIES", "length_min": 12, "length_max": 45, "length_target": 36, "target_wpm": 220},
+    "SERIAL_DETECTIVE_FINALIZE_SERIES": {"discriminator": "FINALIZE_SERIES", "length_min": 18, "length_max": 58, "length_target": 48, "target_wpm": 220}
+  },
+  "channels": {
+    "YOUTH_SAFE": "Hộp Truyện Kỳ Diệu",
+    "ADULT_STANDARD": "Dạ Khúc Trưởng Thành",
+    "SERIAL_DETECTIVE": "Dạ Đàm Kỳ Án"
+  }
+}

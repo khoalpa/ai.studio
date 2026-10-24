@@ -1,0 +1,9 @@
+{
+  "schema_version": "1.1",
+  "package_quality_report_schema_version": "2.0",
+  "portrait": {"width": 1080, "height": 1920, "format": "PNG"},
+  "max_attempts_per_basename": 3,
+  "cover_max_attempts": 4,
+  "required_parity_fields": ["basename", "visual_moment", "focal_character_ids", "state_delta_to_show"],
+  "quality_dimensions": ["STORY_CONTENT", "NARRATIVE_ENGAGEMENT", "AUDIO_TTS_READABILITY", "PROFILE_FIDELITY", "CONTINUITY", "SAFETY", "LANDSCAPE_VISUALS", "PORTRAIT_VISUALS", "CROSS_ORIENTATION_PARITY", "COVER_TYPOGRAPHY", "VISUAL_CONSISTENCY", "PROVENANCE_INTEGRITY"]
+}

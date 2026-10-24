@@ -1,0 +1,7 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "package_quality_report.schema.json",
+  "type": "object",
+  "required": ["schema_version", "report_id", "generated_at_utc", "package_identity", "registry_bindings", "summary", "dimensions", "measurement_ledger", "story_evidence", "image_evidence", "blockers", "recommendations", "validation"],
+  "additionalProperties": false
+}

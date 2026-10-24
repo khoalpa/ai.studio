@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "release_report.schema.json",
+  "type": "object",
+  "required": ["schema_version", "evaluated_at_utc", "release_channel", "release_label", "source_package", "checks", "blockers", "warnings", "validation_ledger", "readiness", "model_inventory", "dependency_inventory", "framework_audit", "limitations", "validation"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "release_channel": {"enum": ["DEVELOPMENT", "PRODUCTION"]},
+    "warnings": {"type": "array"},
+    "validation_ledger": {"type": "object"},
+    "readiness": {"enum": ["READY", "BLOCKED"]}
+  },
+  "additionalProperties": false
+}

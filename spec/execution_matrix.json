@@ -1,0 +1,23 @@
+{
+  "matrix_version": "0.1.0",
+  "defaults": {
+    "STAGE1": ["PROFILE_GATE", "STORY_DURATION_CONFIRMATION", "STORY_JSON_GATE", "SEMANTIC_REPETITION_GATE", "AGE_PROFILE_GATE", "DIALOGUE_STRUCTURE_GATE", "STORY_QUALITY_GATE", "PROFILE_SAFETY_GATE", "CHARACTER_REFERENCE_SET_GATE", "WORKFLOW_MANIFEST_GATE", "PACKAGE_ARCHIVE_GATE"],
+    "STAGE2": ["PROFILE_GATE", "STORY_JSON_GATE", "PROFILE_SAFETY_GATE", "CHARACTER_REFERENCE_SET_GATE", "IMAGE_GENERATION_MODE_GATE", "VISUAL_PLAN_BINDING_GATE", "LANDSCAPE_ASSET_GATE", "LANDSCAPE_SEMANTIC_GATE", "WORKFLOW_MANIFEST_GATE", "PACKAGE_ARCHIVE_GATE"],
+    "STAGE3": ["PROFILE_GATE", "STORY_JSON_GATE", "PROFILE_SAFETY_GATE", "CHARACTER_REFERENCE_SET_GATE", "VISUAL_PLAN_BINDING_GATE", "PORTRAIT_ASSET_GATE", "CROSS_ORIENTATION_PARITY_GATE", "PACKAGE_QUALITY_REPORT_GATE", "WORKFLOW_MANIFEST_GATE", "PACKAGE_ARCHIVE_GATE"],
+    "STAGE4": ["PROFILE_GATE", "STORY_JSON_GATE", "PROFILE_SAFETY_GATE", "CHARACTER_REFERENCE_SET_GATE", "VISUAL_PLAN_BINDING_GATE", "PACKAGE_QUALITY_REPORT_GATE", "VIDEO_PROMPT_FILE_GATE", "VIDEO_PROMPT_CONTINUITY_GATE", "WORKFLOW_MANIFEST_GATE", "PACKAGE_ARCHIVE_GATE"]
+  },
+  "routes": [
+    {"profile": "YOUTH_SAFE", "stage": "STAGE1", "operations": ["CREATE", "REPAIR"], "status": "ENABLED", "extra_gates": []},
+    {"profile": "YOUTH_SAFE", "stage": "STAGE2", "operations": ["CREATE", "REPAIR"], "status": "ENABLED_ZONE_ONLY", "extra_gates": []},
+    {"profile": "YOUTH_SAFE", "stage": "STAGE3", "operations": ["CREATE", "REPAIR"], "status": "ENABLED_ZONE_ONLY", "extra_gates": []},
+    {"profile": "YOUTH_SAFE", "stage": "STAGE4", "operations": ["CREATE", "REPAIR"], "status": "ENABLED", "extra_gates": []},
+    {"profile": "ADULT_STANDARD", "stage": "STAGE1", "operations": ["CREATE", "REPAIR"], "status": "ENABLED", "extra_gates": []},
+    {"profile": "ADULT_STANDARD", "stage": "STAGE2", "operations": ["CREATE", "REPAIR"], "status": "ENABLED_ZONE_ONLY", "extra_gates": []},
+    {"profile": "ADULT_STANDARD", "stage": "STAGE3", "operations": ["CREATE", "REPAIR"], "status": "ENABLED_ZONE_ONLY", "extra_gates": []},
+    {"profile": "ADULT_STANDARD", "stage": "STAGE4", "operations": ["CREATE", "REPAIR"], "status": "ENABLED", "extra_gates": []},
+    {"profile": "SERIAL_DETECTIVE", "stage": "STAGE1", "operations": ["CREATE", "REPAIR"], "status": "ENABLED", "extra_gates": ["SERIES_CONTINUITY_GATE"]},
+    {"profile": "SERIAL_DETECTIVE", "stage": "STAGE2", "operations": ["CREATE", "REPAIR"], "status": "ENABLED_ZONE_ONLY", "extra_gates": ["SERIES_CONTINUITY_GATE"]},
+    {"profile": "SERIAL_DETECTIVE", "stage": "STAGE3", "operations": ["CREATE", "REPAIR"], "status": "ENABLED_ZONE_ONLY", "extra_gates": []},
+    {"profile": "SERIAL_DETECTIVE", "stage": "STAGE4", "operations": ["CREATE", "REPAIR"], "status": "ENABLED", "extra_gates": []}
+  ]
+}

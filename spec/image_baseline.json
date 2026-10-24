@@ -1,0 +1,63 @@
+{
+  "schema_version": "1.0",
+  "suite_id": "canonical-image-quality-v1",
+  "source_story_suite_id": "canonical-story-quality-v4",
+  "case_ids": [
+    "youth-torn-paper-boat",
+    "youth-lost-kite",
+    "youth-lost-bird-rain",
+    "youth-negative-storm-template-hijack",
+    "adult-memory-choice",
+    "adult-five-characters",
+    "serial-locked-room",
+    "serial-four-suspects"
+  ],
+  "keyframe_roles": ["COVER", "CLIMAX", "ENDING"],
+  "quality_preset": "quality",
+  "provider_mode": "local",
+  "promotion": {
+    "minimum_required_element_recall": 0.95,
+    "minimum_identity_median": 0.55,
+    "minimum_parity_median": 0.70,
+    "maximum_semantic_regression": 0.01,
+    "maximum_latency_ratio": 1.50,
+    "maximum_peak_memory_ratio": 1.25,
+    "maximum_ocr_defects": 0,
+    "maximum_unmeasured_required_elements": 0,
+    "minimum_human_score": 4.0
+  },
+  "dimensions": {
+    "landscape": [3840, 2160],
+    "portrait": [1080, 1920]
+  },
+  "review": {
+    "score_min": 1,
+    "score_max": 5,
+    "dimensions": [
+      "prompt_adherence",
+      "character_consistency",
+      "composition",
+      "anatomy_and_artifacts",
+      "aesthetic_quality"
+    ],
+    "blocker_codes": [
+      "MISSING_FOCAL_CHARACTER",
+      "WRONG_CHARACTER_IDENTITY",
+      "MISSING_REQUIRED_ELEMENT",
+      "WRONG_PROP_STATE",
+      "UNCONTROLLED_TEXT",
+      "SEVERE_ANATOMY_DEFECT",
+      "PORTRAIT_CONTENT_LOSS"
+    ],
+    "minimum_blocker_kappa": 0.7
+  },
+  "defect_taxonomy": [
+    "TECHNICAL_FAILURE",
+    "LOW_SEMANTIC_SCORE",
+    "LOW_IDENTITY_SCORE",
+    "MISSING_REQUIRED_ELEMENT",
+    "UNMEASURED_REQUIRED_ELEMENT",
+    "UNCONTROLLED_TEXT",
+    "CROSS_ORIENTATION_MISMATCH"
+  ]
+}

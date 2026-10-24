@@ -1,0 +1,68 @@
+/* Generated from tokens.json — AI Themes 1.0.0 */
+:root {
+  color-scheme: light;
+  --ui-bg: #f5f6f8;
+  --ui-canvas: #eef0f4;
+  --ui-panel: #ffffff;
+  --ui-surface: #eef1f5;
+  --ui-raised: #e5e9f0;
+  --ui-text: #172033;
+  --ui-muted: #536176;
+  --ui-disabled: #64748b;
+  --ui-border: #c7ced9;
+  --ui-border-subtle: #e1e5ec;
+  --ui-border-strong: #8995a7;
+  --ui-accent: #2459c4;
+  --ui-accent-hover: #19479f;
+  --ui-accent-ink: #ffffff;
+  --ui-accent-soft: #e6edff;
+  --ui-success: #18703d;
+  --ui-success-soft: #e6f5eb;
+  --ui-warning: #865500;
+  --ui-warning-soft: #fff1d6;
+  --ui-danger: #b42a35;
+  --ui-danger-soft: #fdebee;
+  --ui-info: #225ab0;
+  --ui-info-soft: #e8f0ff;
+  --ui-overlay: #00000088;
+  --ui-shadow-color: #17203322;
+  --ui-radius-sm: 4px;
+  --ui-radius-md: 8px;
+  --ui-radius-lg: 12px;
+  --ui-shadow-sm: none;
+  --ui-shadow-md: 0 4px 18px var(--ui-shadow-color);
+  --ui-control-height: 44px;
+  --ui-control-height-sm: 36px;
+  --ui-control-height-lg: 48px;
+  --ui-control-padding: 10px 16px;
+  --ui-gap: 12px;
+  --ui-panel-padding: 24px;
+}
+@media(prefers-color-scheme:dark) { :root:not([data-mode="light"]):not([data-resolved-mode="light"]) {
+  --ui-bg: #10141b;
+  --ui-canvas: #0b0f15;
+  --ui-panel: #171e28;
+  --ui-surface: #202a37;
+  --ui-raised: #293647;
+  --ui-text: #f2f5fa;
+  --ui-muted: #aab7c9;
+  --ui-disabled: #8897aa;
+  --ui-border: #48596e;
+  --ui-border-subtle: #2c394b;
+  --ui-border-strong: #7b8da3;
+  --ui-accent: #8ab8ff;
+  --ui-accent-hover: #b5d2ff;
+  --ui-accent-ink: #102443;
+  --ui-accent-soft: #223b60;
+  --ui-success: #7cdda0;
+  --ui-success-soft: #153424;
+  --ui-warning: #ffd487;
+  --ui-warning-soft: #3b2d16;
+  --ui-danger: #ff9b9b;
+  --ui-danger-soft: #42242b;
+  --ui-info: #a8caff;
+  --ui-info-soft: #1d3353;
+  --ui-overlay: #000000bb;
+  --ui-shadow-color: #00000088;
+ color-scheme:dark;
+} }

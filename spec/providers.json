@@ -1,0 +1,192 @@
+{
+  "schema_version": "1.0",
+  "active_mode": "deterministic",
+  "policy": {
+    "default_timeout_seconds": 120,
+    "retry_attempts": 2,
+    "retry_backoff_seconds": 0.25,
+    "exclusive_accelerator": true,
+    "fallback": "disabled",
+    "circuit_breaker": {
+      "failure_threshold": 3,
+      "recovery_seconds": 30
+    }
+  },
+  "runtimes": {
+    "builtin": {},
+    "llama_cpp": {
+      "endpoint": "http://127.0.0.1:8080",
+      "timeout_seconds": 120,
+      "max_context_tokens": 16384,
+      "max_input_tokens": 12000,
+      "minimum_generation_tokens_per_second": 4,
+      "generation_timeout_overhead_seconds": 30,
+      "maximum_generation_timeout_seconds": 600
+    },
+    "diffusers": {
+      "device": "cuda",
+      "dtype": "float16",
+      "variant": "fp16",
+      "local_files_only": false,
+      "model_cpu_offload": true,
+      "depth_controlnet_enabled": false,
+      "landscape_work_size": [1024, 576],
+      "portrait_work_size": [704, 1216],
+      "character_work_size": [768, 1024],
+      "portrait_strength": 0.38,
+      "upscaler": {
+        "enabled": true,
+        "model": "D:\\project\\ai.studio\\models\\sd-x2-latent-upscaler",
+        "steps": 20,
+        "guidance_scale": 1.0,
+        "sharpen_percent": 115,
+        "sharpen_radius": 1.1,
+        "sharpen_threshold": 3,
+        "contrast": 1.02,
+        "color": 1.01
+      },
+      "ip_adapter": {},
+      "control_preprocessors": {
+        "depth": {
+          "enabled": false,
+          "model": "D:\\project\\ai.studio\\models\\dpt-hybrid-midas",
+          "device": "cpu",
+          "conditioning_scale": 0.8
+        },
+        "canny": {
+          "enabled": false
+        }
+      },
+      "qa": {
+        "ocr_enabled": true,
+        "require_ocr": true,
+        "ocr_language": "eng",
+        "ocr_timeout_seconds": 20,
+        "maximum_ocr_characters": 3,
+        "minimum_variance": 18,
+        "luma_band": [20, 235],
+        "require_semantic": true,
+        "semantic_model": "D:\\project\\ai.studio\\models\\openai-clip-vit-base-patch32",
+        "semantic_threshold": 0.2,
+        "parity_threshold": 0.65,
+        "identity_threshold": 0.55,
+        "element_threshold": 0.16,
+        "character_contrastive_margin": 0.0,
+        "character_contrastive_tolerance": 0.03,
+        "character_attribute_threshold": 0.16,
+        "thresholds_by_asset": {
+          "character": {"maximum_ocr_characters": 3, "semantic_threshold": 0.2, "luma_band": [5, 250]},
+          "cover": {"maximum_ocr_characters": 3, "semantic_threshold": 0.22, "parity_threshold": 0.7, "identity_threshold": 0.55},
+          "landscape": {"maximum_ocr_characters": 3, "semantic_threshold": 0.22, "identity_threshold": 0.55},
+          "portrait": {"maximum_ocr_characters": 3, "parity_threshold": 0.7}
+        },
+        "local_files_only": false
+      }
+    }
+  },
+  "image_models": {
+    "sd35_medium": {
+      "family": "sd3",
+      "model_id": "D:\\project\\ai.studio\\models\\stable-diffusion-3.5-medium",
+      "dtype": "float16",
+      "variant": null,
+      "loader": "StableDiffusion3Pipeline",
+      "image_loader": "StableDiffusion3Img2ImgPipeline",
+      "inpaint_loader": "AutoPipelineForInpainting",
+      "scheduler": "FlowMatchEulerDiscreteScheduler",
+      "work_sizes": {
+        "character_image": [768, 1024],
+        "landscape": [1024, 576],
+        "portrait": [704, 1216]
+      },
+      "parameters": {"steps": 28, "guidance_scale": 4.5},
+      "capabilities": {
+        "text_to_image": true,
+        "image_to_image": true,
+        "reference_images": false,
+        "inpainting": false,
+        "outpainting": false,
+        "controlnet": false,
+        "negative_prompt": true
+      }
+    }
+  },
+  "modes": {
+    "deterministic": {
+      "story": "deterministic",
+      "character_image": "deterministic",
+      "safety": "rule_based",
+      "landscape": "deterministic",
+      "portrait": "deterministic"
+    },
+  "local": {
+    "story": "local_text",
+    "character_image": "local_sd35",
+    "safety": "local_safety",
+    "landscape": "local_sd35",
+    "portrait": "local_sd35"
+  },
+    "local_sd35": {
+      "story": "local_text",
+      "character_image": "local_sd35",
+      "safety": "local_safety",
+      "landscape": "local_sd35",
+      "portrait": "local_sd35"
+    },
+    "hybrid": {
+      "story": "local_text",
+      "character_image": "deterministic",
+      "safety": "rule_based",
+      "landscape": "deterministic",
+      "portrait": "deterministic"
+    },
+    "text_local": {
+      "story": "local_text",
+      "character_image": "deterministic",
+      "safety": "local_safety",
+      "landscape": "deterministic",
+      "portrait": "deterministic"
+    }
+  },
+  "adapters": {
+    "deterministic": {
+      "runtime": "builtin",
+      "model_id": null,
+      "model_file": null,
+      "quantization": null,
+      "parameters": {"seed_policy": "content_hash"}
+    },
+    "rule_based": {
+      "runtime": "builtin",
+      "model_id": null,
+      "model_file": null,
+      "quantization": null,
+      "parameters": {"method": "deterministic_lexical"}
+    },
+    "local_text": {
+      "runtime": "llama_cpp",
+      "model_id": "qwen3-14b",
+      "model_file": null,
+      "quantization": null,
+      "parameters": {"temperature": 0.7, "top_p": 0.9}
+    },
+    "local_safety": {
+      "runtime": "llama_cpp",
+      "model_id": "qwen3-14b",
+      "model_file": null,
+      "quantization": null,
+      "parameters": {"temperature": 0}
+    },
+    "local_sd35": {
+      "runtime": "diffusers",
+      "model_profile": "sd35_medium",
+      "model_id": "D:\\project\\ai.studio\\models\\stable-diffusion-3.5-medium",
+      "model_file": null,
+      "quantization": null,
+      "parameters": {
+        "steps": 28,
+        "guidance_scale": 4.5
+      }
+    }
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "visual_review.schema.json",
+  "type": "object",
+  "required": ["schema_version", "decision", "review_method", "approved_at_utc", "source_quality_report_sha256", "items"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "decision": {"enum": ["APPROVED", "PENDING"]},
+    "review_method": {"enum": ["OPERATOR_EXPLICIT_CONFIRMATION", "NOT_REVIEWED"]},
+    "approved_at_utc": {"type": ["string", "null"]},
+    "source_quality_report_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "items": {"type": "array", "minItems": 3}
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "contract_version": "0.3.0",
+  "status": "RELEASE_CANDIDATE_MILESTONE_G",
+  "included": [
+    "three profile identifiers and profile persistence metadata",
+    "four-stage linear workflow",
+    "CREATE and REPAIR operation contracts",
+    "ZONE image mode with ten canonical basenames",
+    "immutable inherited artifacts",
+    "manifest, SHA-256 lineage and safe ZIP requirements",
+    "deterministic validation architecture",
+    "offline fake-provider integration path",
+    "SERIAL_DETECTIVE anchor transaction and four-stage route",
+    "package repair sessions with stage ownership enforcement",
+    "local run index",
+    "provider-mode registry and generation provenance",
+    "local runtime contract, capability discovery and failure policies",
+    "local Stage 1 planning, zone writing, critique, repair and safety assessment",
+    "local diffusion image generation and technical, OCR, semantic and parity QA",
+    "Stage 4 shot registry, continuity graph, subtitle delivery, optional Piper TTS and export presets",
+    "persistent local job history, idempotency, progress, cooperative cancellation, retry lineage and serialized GPU lane",
+    "release evaluation, cumulative model provenance, external audit binding and verified distribution bundle"
+  ],
+  "reserved_not_enabled": ["SCENE image mode", "RESUME execution route"],
+  "deferred": [
+    "legacy adapters and migration",
+    "performing the external framework release audit",
+    "provider-specific local production adapters",
+    "full semantic scoring equivalence with prompt 3.16.13"
+  ],
+  "release_rules": {
+    "official_archive_requires_all_blockers_pass": true,
+    "not_verified_blocks_publish": true,
+    "model_assessment_cannot_verify_integrity": true,
+    "runtime_cannot_self_assert_framework_release": true
+  }
+}
